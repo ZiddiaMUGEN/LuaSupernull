@@ -94,6 +94,8 @@ end
 	function player:lifeset(value) self.wrapped:lifeset(value) end
 	function player:powerset(value) self.wrapped:powerset(value) end
 	function player:aienableset(value) self.wrapped:aienableset(value) end
+	function player:numhelper(id) return self.wrapped:numhelper(id) end
+	function player:numexplod(id) return self.wrapped:numexplod(id) end
 	function player:var(idx) return self.wrapped:var(idx) end
 	function player:fvar(idx) return self.wrapped:fvar(idx) end
 	function player:sysvar(idx) return self.wrapped:sysvar(idx) end
@@ -135,20 +137,69 @@ end
 	-- utility on object
 	function player:getplayeraddress() return self.address end
 	function player:getinfoaddress() return mll.ReadInteger(self.address) end
+
+	-- state controllers and pseudo-state controllers
+	function player:ctrlset(tab) 
+		if tab.value ~= nil then mll.WriteInteger(self:getplayeraddress() + 0xEE4, tab.value) end
+	end
+
+	function player:varset(idx, value)
+		if idx < 0 or idx > 59 then return end
+		mll.WriteInteger(self:getplayeraddress() + 0xF1C + idx * 4, value)
+	end
+
+	function player:fvarset(idx, value) 
+		if idx < 0 or idx > 39 then return end
+		mll.WriteFloat(self:getplayeraddress() + 0x100C + idx * 4, value)
+	end
+
+	function player:sysvarset(idx, value) 
+		if idx < 0 or idx > 4 then return end
+		mll.WriteInteger(self:getplayeraddress() + 0x10AC + idx * 4, value)
+	end
+
+	function player:sysfvarset(idx, value) 
+		if idx < 0 or idx > 4 then return end
+		mll.WriteFloat(self:getplayeraddress() + 0x10C0 + idx * 4, value)
+	end
+
+	
 	
 	-- getters
 	function player:displayname() return mll.ReadString(self:getinfoaddress() + 0x30) end
 	function player:isfrozen() return mll.ReadInteger(self:getplayeraddress() + 0x1B4) end
+	function player:helperid() return mll.ReadInteger(self:getplayeraddress() + 0x1644) end
+	function player:parentid() return mll.ReadInteger(self:getplayeraddress() + 0x1648) end
 	function player:helpertype() return mll.ReadInteger(self:getplayeraddress() + 0x1654) end
 
 	-- setters
 	function player:nameset(value) mll.WriteString(self:getinfoaddress() + 0x00, value) end
 	function player:displaynameset(value) mll.WriteString(self:getinfoaddress() + 0x30, value) end
 	function player:authornameset(value) mll.WriteString(self:getinfoaddress() + 0x60, value) end
+	function player:idset(value) mll.WriteInteger(self:getplayeraddress() + 0x04, value) end
+	function player:teamsideset(value) mll.WriteInteger(self:getplayeraddress() + 0x0C, value) end
 	function player:ishelperset(value) mll.WriteInteger(self:getplayeraddress() + 0x1C, value) end
 	function player:isfrozenset(value) mll.WriteInteger(self:getplayeraddress() + 0x1B4, value) end
+	function player:lifemaxset(value) 
+		if value == 0 then mugen.log("Refusing to set LifeMax to 0 - this will crash your game.\n") end
+		mll.WriteInteger(self:getplayeraddress() + 0x1BC, value) 
+	end
+	function player:powermaxset(value) 
+		if value == 0 then mugen.log("Refusing to set PowerMax to 0 - this will crash your game?\n") end
+		mll.WriteInteger(self:getplayeraddress() + 0x1DC, value) 
+	end
+	function player:statenoset(value) mll.WriteInteger(self:getplayeraddress() + 0xCCC, value) end
+	function player:prevstatenoset(value) mll.WriteInteger(self:getplayeraddress() + 0xCD0, value) end
+	function player:timeset(value) mll.WriteInteger(self:getplayeraddress() + 0xED4, value) end
+	function player:hitpausetimeset(value) mll.WriteInteger(self:getplayeraddress() + 0xEF0, value) end
 	function player:aliveset(value) mll.WriteInteger(self:getplayeraddress() + 0xF00, value) end
+	function player:hitcountset(value) mll.WriteInteger(self:getplayeraddress() + 0x1520, value) end
+	function player:uniqhitcountset(value) mll.WriteInteger(self:getplayeraddress() + 0x1524, value) end
+	function player:palnoset(value) mll.WriteInteger(self:getplayeraddress() + 0x153C, value) end
+	function player:helperidset(value) mll.WriteInteger(self:getplayeraddress() + 0x1644, value) end
+	function player:parentidset(value) mll.WriteInteger(self:getplayeraddress() + 0x1648, value) end
 	function player:helpertypeset(value) mll.WriteInteger(self:getplayeraddress() + 0x1654, value) end
+	function player:ailevelset(value) mll.WriteInteger(self:getplayeraddress() + 0x1658, value) end
 -- END PLAYER MODULE NEW FUNCTIONALITY
 
 -- update the player module

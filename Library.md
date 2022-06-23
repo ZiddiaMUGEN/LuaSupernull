@@ -82,6 +82,18 @@ The `mugen` module exposes some basic functionality for working with MUGEN. A po
 
 `mugen.getbaseaddress()` - Returns the base address of the MUGEN data structure. Not recommended to use unless you're planning to work with direct memory editing.
 
+`mugen.gametimeset(i)` - Sets the value of the `GameTime` trigger.
+
+`mugen.roundstateset(i)` - Sets the value of the `RoundState` trigger.
+
+`mugen.matchnoset(i)` - Sets the value of the `MatchNo` trigger.
+
+`mugen.roundnoset(i)` - Sets the value of the `MatchNo` trigger.
+
+### AssertSpecial
+
+Try `mugen.isassertxyz()` where `xyz` is the name of an AssertSpecial flag (in lowercase). To set, try `mugen.setassertxyz(i)` where `xyz` is the name of an AssertSpecial flag. The value you provide should fit into 1 byte (0 ~ 255, but only functional values are 0 and 1).
+
 ## Unknown or Unconfirmed
 
 `mugen.winningteam()` - Presumed to return the team which won the current round, but unconfirmed. Returned `0` in my tests.
@@ -254,7 +266,7 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:ishelper()` - Returns the current value of the `IsHelper` trigger.
 
-`player:numhelper()` - Returns the current value of the `NumHelper` trigger.
+`player:numhelper(i)` - Returns the current value of the `NumHelper` trigger. Takes an optional integer argument to limit the count to only Helpers with the specified HelperID.
 
 `player:isvalid()` - Returns an integer representing whether the player is valid or not (assume this is for managing Helpers being destroyed?)
 
@@ -304,6 +316,10 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:helpertype()` - Returns the player's helper type (e.g. 0 = Normal-type Helper). Note this value is only meaningful if `player:ishelper()` returns `true`.
 
+`player:helperid()` - Returns the player's HelperID (or zero for non-Helpers).
+
+`player:parentid()` - Returns the player's ParentID (or zero for non-Helpers).
+
 `player:nameset(s)` - Sets the player's internal name.
 
 `player:displaynameset(s)` - Sets the player's display name.
@@ -316,13 +332,51 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:aliveset(i)` - Sets the value of the `Alive` trigger (as an integer).
 
+`player:timeset(i)` - Sets the value of the `Time` trigger.
+
+`player:helperidset(i)` - Sets the value of the player's HelperID.
+
+`player:parentidset(i)` - Sets the value of the player's ParentID.
+
 `player:helpertypeset(i)` - Sets the value of the player's helper type.
+
+`player:teamsideset(i)` - Sets the value of the `TeamSide` trigger. (This also has an impact on the player's team from AI, trigger, etc. perspectives)
+
+`player:ailevelset(i)` - Sets the value of the `AILevel` trigger.
+
+`player:hitcountset(i)` - Sets the value of the `HitCount` trigger.
+
+`player:uniqhitcountset(i)` - Sets the value of the `UniqHitCount` trigger.
+
+`player:hitpausetimeset(i)` - Sets the value of the `HitPauseTime` trigger.
+
+`player:idset(i)` - Sets the value of the `ID` trigger.
+
+`player:palnoset(i)` - Sets the value of the `PalNo` trigger.
+
+`player:statenoset(i)` - Sets the value of the `StateNo` trigger.
+
+`player:prevstatenoset(i)` - Sets the value of the `PrevStateNo` trigger.
+
+`player:lifemaxset(i)` - Sets the value of the `LifeMax` trigger. Will not allow it to be set to 0 as this crashes the game.
+
+`player:powermaxset(i)` - Sets the value of the `PowerMax` trigger. Will not allow it to be set to 0 as this crashes the game (TODO, validate this for PowerMax...)
+
+`player:ctrlset(t)` - Applies the effects of a CtrlSet state controller. `t` is a table accepting named properties for the arguments applicable to a regular CtrlSet (i.e. value).
+
+`player:varset(idx, value)` - Applies the effects of a VarSet state controller against the regular variable with index `idx`.
+
+`player:fvarset(idx, value)` - Applies the effects of a VarSet state controller against the float variable with index `idx`.
+
+`player:sysvarset(idx, value)` - Applies the effects of a VarSet state controller against the regular system variable with index `idx`.
+
+`player:sysfvarset(idx, value)` - Applies the effects of a VarSet state controller against the float system variable with index `idx`.
 
 ## Unknown or Unconfirmed
 
 `player:hitdefattrmatch(??)` - Don't even know the signature for this one. Very likely it does not work with current `player` wrapper. If you want to play with it and figure it out, try using `p.wrapped:hitdefattrmatch(...)` (where `p` is a player object).
 
-`player:numexplod()` - Confirmed this worked with no arguments, but need to re-confirm if it can accept an argument to check for explods with a given ID. Similar for `NumHelper`, `NumProj`, `NumTarget`.
+`player:numexplod()` - Confirmed this worked with no arguments, but need to re-confirm if it can accept an argument to check for explods with a given ID. Similar for `NumProj`, `NumTarget`.
 
 `player:command(??)` - Just untested, assume it would take some string input.
 

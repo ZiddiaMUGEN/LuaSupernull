@@ -5,7 +5,7 @@
 ---- most functions exposed in mll are quite low-level (raw read/write of memory, some C library functions)
 ---- if you're not comfortable with raw memory access, you may be able to leverage the upgraded player and mugen modules instead, which expose a bunch of friendly functions wrapping some mll calls.
 
-local MugenLuaLibrary = { TEMPLATE_VERSION = 1 }
+local MugenLuaLibrary = { TEMPLATE_VERSION = 2 }
 
 -- BEGIN EXTERNAL MODULES
 
@@ -158,6 +158,18 @@ function MugenLuaLibrary.ReadInteger(address)
 	return addressPointer[0]
 end
 
+-- read a single float from memory
+function MugenLuaLibrary.ReadFloat(address)
+	local addressPointer = ffi.cast("float *", address)
+	return addressPointer[0]
+end
+
+-- read a single double from memory
+function MugenLuaLibrary.ReadDouble(address)
+	local addressPointer = ffi.cast("double *", address)
+	return addressPointer[0]
+end
+
 -- read a string from memory
 function MugenLuaLibrary.ReadString(address)
 	local addressPointer = ffi.cast("char *", address)
@@ -173,6 +185,18 @@ end
 -- write a single integer to destination address
 function MugenLuaLibrary.WriteInteger(address, value)
 	local addressPointer = ffi.cast("int *", address)
+	addressPointer[0] = value
+end
+
+-- write a single float to destination address
+function MugenLuaLibrary.WriteFloat(address, value)
+	local addressPointer = ffi.cast("float *", address)
+	addressPointer[0] = value
+end
+
+-- write a single double to destination address
+function MugenLuaLibrary.WriteDouble(address, value)
+	local addressPointer = ffi.cast("double *", address)
 	addressPointer[0] = value
 end
 
