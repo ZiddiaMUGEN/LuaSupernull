@@ -137,6 +137,26 @@ end
 	-- utility on object
 	function player:getplayeraddress() return self.address end
 	function player:getinfoaddress() return mll.ReadInteger(self.address) end
+	-- returns the partner as a player (returns the root's partner if this player is a helper).
+	-- returns nil if the partner does not exist.
+	function player:partner()
+		if self:ishelper() then
+			local root = self:root()
+			-- safeguard against weirdness if addresses were manually edited
+			if root:id() == self:id() then return nil end
+			return root:partner()
+		end
+		
+		local partnerID = nil
+		for p in player.player_iter() do
+			if p:teamside() == self:teamside() and not p:ishelper() then
+				partnerID = p:id()
+				break
+			end
+		end
+		if partnerID == nil then return nil end
+		return player.playerfromid(partnerID)
+	end
 	-- returns the parent as a player (or `self` if this player has no parent)
 	function player:parent()
 		local parentAddr = mll.ReadInteger(self:getplayeraddress() + 0x164C)
@@ -181,6 +201,44 @@ end
 	function player:sysfvarset(idx, value) 
 		if idx < 0 or idx > 4 then return end
 		mll.WriteFloat(self:getplayeraddress() + 0x10C0 + idx * 4, value)
+	end
+
+	function player:posset(tab)
+		local x = tab.x or self:pos().x
+		local y = tab.y or self:pos().y
+
+		mll.WriteDouble(self:getplayeraddress() + 0x1F8, x)
+		mll.WriteDouble(self:getplayeraddress() + 0x200, y)
+	end
+
+	function player:velset(tab)
+		local x = tab.x or self:vel().x
+		local y = tab.y or self:vel().y
+
+		mll.WriteDouble(self:getplayeraddress() + 0x208, x)
+		mll.WriteDouble(self:getplayeraddress() + 0x210, y)
+	end
+
+	function player:screenbound(tab)
+		local value = tab.value or 0
+		local movex = 0
+		local movey = 0
+		if tab.movecamera ~= nil then
+			movex = tab.movecamera.x or 0
+			movey = tab.movecamera.y or 0
+		end
+
+		mll.WriteInteger(self:getplayeraddress() + 0x28C, value)
+		mll.WriteInteger(self:getplayeraddress() + 0x290, movex)
+		mll.WriteInteger(self:getplayeraddress() + 0x294, movey)
+	end
+
+	function player:checkscreenbound()
+		local value = mll.ReadInteger(self:getplayeraddress() + 0x28C)
+		local movex = mll.ReadInteger(self:getplayeraddress() + 0x290)
+		local movey = mll.ReadInteger(self:getplayeraddress() + 0x294)
+
+		return {value = value, movecamera = {x = movex, y = movey}}
 	end
 
 	-- not quite the same as TargetState. this will force the `self` player to run the state `stateno` under `stateowner`'s statefile.

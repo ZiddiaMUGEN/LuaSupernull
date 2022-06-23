@@ -306,6 +306,8 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player.current()` - Returns the player object which is currently running a Lua script. WARNING: THIS IS NOT GUARANTEED TO BE CORRECT IF YOU SPAWN BACKGROUNDED TASKS, RUN LUA OUTSIDE OF THE DTC ENVIRONMENT, ETC. THE DTC PATCH IS RESPONSIBLE FOR SETTING THIS CORRECTLY.
 
+`player:partner()` - Returns the player object representing the partner of another player. Returns the root's partner for a Helper. Returns `nil` if no partner exists.
+
 `player:parent()` - Returns the player object representing the parent of another player (or the same player if it has no parent).
 
 `player:root()` - Returns the player object representing the root of another player (or the same player if it has no root).
@@ -375,6 +377,14 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 `player:powermaxset(i)` - Sets the value of the `PowerMax` trigger. Will not allow it to be set to 0 as this crashes the game (TODO, validate this for PowerMax...)
 
 `player:ctrlset(t)` - Applies the effects of a CtrlSet state controller. `t` is a table accepting named properties for the arguments applicable to a regular CtrlSet (i.e. value).
+
+`player:screenbound(t)` - Applies the effects of a ScreenBound state controller. `t` is a table accepting named properties for the arguments applicable to a regular ScreenBound (i.e. value, movecamera.x, movecamera.y). PLEASE NOTE that executing ScreenBound on a target player will not function correctly, as ScreenBound is reset at the start of each player's frame. You would need to patch the ScreenBound value reset via ASM to resolve this.
+
+`player:getscreenbound()` - Returns a table with the current ScreenBound parameters applied to the player.
+
+`player:posset(t)` - Applies the effects of a PosSet state controller. `t` is a table accepting named properties for the arguments applicable to a regular PosSet (i.e. x, y).
+
+`player:velset(t)` - Applies the effects of a VelSet state controller. `t` is a table accepting named properties for the arguments applicable to a regular VelSet (i.e. x, y).
 
 `player:varset(idx, value)` - Applies the effects of a VarSet state controller against the regular variable with index `idx`.
 
