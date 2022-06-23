@@ -137,6 +137,26 @@ end
 	-- utility on object
 	function player:getplayeraddress() return self.address end
 	function player:getinfoaddress() return mll.ReadInteger(self.address) end
+	-- returns the parent as a player (or `self` if this player has no parent)
+	function player:parent()
+		local parentAddr = mll.ReadInteger(self:getplayeraddress() + 0x164C)
+		if parentAddr == 0 then return self end
+		local parentID = mll.ReadInteger(parentAddr + 0x04)
+		return player.playerfromid(parentID)
+	end
+	-- returns the root as a player (or `self` if this player has no root)
+	function player:root()
+		local rootAddr = mll.ReadInteger(self:getplayeraddress() + 0x1650)
+		if rootAddr == 0 then return self end
+		local rootID = mll.ReadInteger(rootAddr + 0x04)
+		return player.playerfromid(rootID)
+	end
+	-- returns the state owner as a player (or `self` if this player is not custom stated)
+	function player:stateowner()
+		local ownerIndex = mll.ReadInteger(self:getplayeraddress() + 0xCB8)
+		if ownerIndex == -1 then return self end
+		return player.getplayer(ownerIndex)
+	end
 
 	-- state controllers and pseudo-state controllers
 	function player:ctrlset(tab) 
@@ -163,7 +183,19 @@ end
 		mll.WriteFloat(self:getplayeraddress() + 0x10C0 + idx * 4, value)
 	end
 
+	-- not quite the same as TargetState. this will force the `self` player to run the state `stateno` under `stateowner`'s statefile.
+	-- `time` is an optional argument, if provided, it sets the `Time` trigger. if not provided, `Time` is reset to 0.
+	function player:forcecustomstate(stateowner, stateno, time)
+		mll.WriteInteger(self:getplayeraddress() + 0xCB8, player.indexfromid(stateowner:id())) -- state owner ID
+		mll.WriteInteger(self:getplayeraddress() + 0xCC8, player.indexfromid(stateowner:id())) -- anim owner ID
 
+		local ownerStateCodePointer = mll.ReadInteger(stateowner:getinfoaddress() + 0x42C)
+		mll.WriteInteger(self:getplayeraddress() + 0xCBC, ownerStateCodePointer) -- state code pointer
+		mll.WriteInteger(self:getplayeraddress() + 0xCC0, stateowner:getinfoaddress() + 0x41C) -- AI data pointer?
+
+		self:statenoset(stateno)
+		self:timeset(time or 0)
+	end
 	
 	-- getters
 	function player:displayname() return mll.ReadString(self:getinfoaddress() + 0x30) end

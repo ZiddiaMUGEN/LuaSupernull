@@ -306,6 +306,14 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player.current()` - Returns the player object which is currently running a Lua script. WARNING: THIS IS NOT GUARANTEED TO BE CORRECT IF YOU SPAWN BACKGROUNDED TASKS, RUN LUA OUTSIDE OF THE DTC ENVIRONMENT, ETC. THE DTC PATCH IS RESPONSIBLE FOR SETTING THIS CORRECTLY.
 
+`player:parent()` - Returns the player object representing the parent of another player (or the same player if it has no parent).
+
+`player:root()` - Returns the player object representing the root of another player (or the same player if it has no root).
+
+`player:stateowner()` - Returns the player object representing the state owner of another player (or the same player if it is not custom stated).
+
+`player:forcecustomstate(p, i1, i2)` - Forces the player object to enter a custom state. Custom state runs code from player object `p`'s files. Sets `StateNo` to `i1` and, optionally, sets `Time` to `i2`. If `i2` is ommitted, `Time` will be set to 0. Example: `player.playerfromid(57):forcecustomstate(player.current(), 1000)` - forces the player with PlayerID 57 into custom state 1000 from the current player's state files.
+
 `player:getplayeraddress()` - Returns the base address of the player's data structure. Not recommended to use unless you're planning to work with direct memory editing.
 
 `player:getinfoaddress()` - Returns the base address of the player's info structure. Not recommended to use unless you're planning to work with direct memory editing.
