@@ -163,11 +163,12 @@ end
 		mll.WriteFloat(self:getplayeraddress() + 0x10C0 + idx * 4, value)
 	end
 
-	
+
 	
 	-- getters
 	function player:displayname() return mll.ReadString(self:getinfoaddress() + 0x30) end
 	function player:isfrozen() return mll.ReadInteger(self:getplayeraddress() + 0x1B4) end
+	function player:guardflag() return mll.ReadInteger(self:getplayeraddress() + 0xEE8) end
 	function player:helperid() return mll.ReadInteger(self:getplayeraddress() + 0x1644) end
 	function player:parentid() return mll.ReadInteger(self:getplayeraddress() + 0x1648) end
 	function player:helpertype() return mll.ReadInteger(self:getplayeraddress() + 0x1654) end
@@ -191,6 +192,7 @@ end
 	function player:statenoset(value) mll.WriteInteger(self:getplayeraddress() + 0xCCC, value) end
 	function player:prevstatenoset(value) mll.WriteInteger(self:getplayeraddress() + 0xCD0, value) end
 	function player:timeset(value) mll.WriteInteger(self:getplayeraddress() + 0xED4, value) end
+	function player:guardflagset(value) mll.WriteInteger(self:getplayeraddress() + 0xEE8, value) end
 	function player:hitpausetimeset(value) mll.WriteInteger(self:getplayeraddress() + 0xEF0, value) end
 	function player:aliveset(value) mll.WriteInteger(self:getplayeraddress() + 0xF00, value) end
 	function player:hitcountset(value) mll.WriteInteger(self:getplayeraddress() + 0x1520, value) end

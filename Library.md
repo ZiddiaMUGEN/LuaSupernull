@@ -320,6 +320,8 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:parentid()` - Returns the player's ParentID (or zero for non-Helpers).
 
+`player:guardflag()` - Gets the value of the guard flag (which prevents the effect of `Target*` state controllers).
+
 `player:nameset(s)` - Sets the player's internal name.
 
 `player:displaynameset(s)` - Sets the player's display name.
@@ -343,6 +345,8 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 `player:teamsideset(i)` - Sets the value of the `TeamSide` trigger. (This also has an impact on the player's team from AI, trigger, etc. perspectives)
 
 `player:ailevelset(i)` - Sets the value of the `AILevel` trigger.
+
+`player:guardflagset(i)` - Sets the value of the guard flag (which prevents the effect of `Target*` state controllers).
 
 `player:hitcountset(i)` - Sets the value of the `HitCount` trigger.
 
@@ -408,10 +412,18 @@ MLL is the module used as a bridge between FFI (the raw C stuff) and Lua. It's i
 
 `mll.ReadInteger(addr)` - Reads one int from `addr` and returns it.
 
+`mll.ReadFloat(addr)` - Reads one float from `addr` and returns it.
+
+`mll.ReadDouble(addr)` - Reads one double from `addr` and returns it.
+
 `mll.ReadString(addr)` - Reads a null-terminated string from `addr` and returns it.
 
-`mll.WriteByte(addr)` - Writes one byte to `addr`.
+`mll.WriteByte(addr, val)` - Writes one byte to `addr`.
 
-`mll.WriteInteger(addr)` - Writes one int to `addr`.
+`mll.WriteInteger(addr, val)` - Writes one int to `addr`.
 
-`mll.WriteString(addr)` - Writes a null-terminated string to `addr`.
+`mll.WriteFloat(addr, val)` - Writes one float to `addr`.
+
+`mll.WriteDouble(addr, val)` - Writes one double to `addr`.
+
+`mll.WriteString(addr, val)` - Writes a null-terminated string to `addr`.
