@@ -1,0 +1,108 @@
+-- BEGIN CONFIGURATION
+
+	-- name of this file (should NEVER be changed due to ROP dependency) - note you should also never rename or move this file!
+	local EXPLOIT_FILENAME = "elua"
+	-- path to the library for C interface - you can move or rename this, but make sure not to include the `.lua` extension in this constant.
+	local EXPLOIT_LIBRARY = "Supernull/MLL/mll"
+
+	-- location of the payload DLL files - feel free to modify + rename these, however, it may not load unless you leave the DLL extension intact
+	local EXPLOIT_FFILIB = "Supernull/Libraries/ffi.dll"
+	local EXPLOIT_LUALIB = "Supernull/Libraries/lua5.1.dll"
+
+	-- location of a folder containing any functions we will be memory-mapping and using
+	local EXPLOIT_FUNCTION_FOLDER = "Supernull/Functions/"
+
+-- END CONFIGURATION
+
+function bootstrap()
+	mugen.log("\n\nProcessing exploit script in " .. EXPLOIT_FILENAME .. '...\n')
+
+	-- get folder containing this elua file
+	local sourcefile = debug.getinfo(1, "S").source
+	local sourcefolder = string.sub(sourcefile, 2, string.len(sourcefile) - string.len(EXPLOIT_FILENAME))
+	-- 1.1b1 restricts package.path to be `data/?.lua`, but we can just add another load path here
+	package.path = package.path .. ";./?.lua;./?"
+
+	-- attempt to load mll.lua -- we load this into the global table for use later
+	_G.mll = require(sourcefolder .. EXPLOIT_LIBRARY)
+	mll.LoadBaseLibraries(sourcefolder, EXPLOIT_LUALIB, EXPLOIT_FFILIB)
+
+	if not mll.VirtualProtect(0x400000, 0x100000, 0x40) then os.exit(-1) end
+	if not mll.VirtualProtect(0x67BD0210, 0x1000, 0x40) then os.exit(-1) end
+	mugen.log("Successfully granted execute permissions in both memory regions.\n\n")
+
+	local stubFunctionAddress = mll.MemoryMapFile(sourcefolder .. EXPLOIT_FUNCTION_FOLDER .. "stub.bin", 0x1000, 0x40)
+	if stubFunctionAddress == 0 then os.exit(-1) end
+	mugen.log(string.format("Stub return function is loaded into memory at 0x%08x.\n\n", tonumber(stubFunctionAddress)))
+
+	-- overwrite return address from Lua execution
+	local preservedStack = mll.ReadInteger(0x67BD0328)
+	mll.WriteInteger(preservedStack + 0x1B0, stubFunctionAddress)
+
+	-- replacement for placeholder addresses in the loaded stub
+	if mll.GetMugenVersion() == 1 then
+		-- overwrite the stub statedef alloc target
+		jumpDistance = 0x00466000 - (stubFunctionAddress + 0x1B) - 4
+		mll.WriteInteger(stubFunctionAddress + 0x1B, jumpDistance)
+	else
+		-- overwrite the stub statedef alloc target
+		jumpDistance = 0x00466550 - (stubFunctionAddress + 0x1B) - 4
+		mll.WriteInteger(stubFunctionAddress + 0x1B, jumpDistance)
+	end
+
+	-- fetch the character info structure pointer
+	local characterInfoPointer = mll.ReadInteger(preservedStack + 0x33C)
+	mugen.log(string.format("Character info structure pointer discovered at 0x%08x.\n", tonumber(characterInfoPointer)))
+
+	-- allocate space for the character folder string
+	local characterFolderString = mll.VirtualAlloc(0x1000, 0x40)
+	mll.WriteString(characterFolderString, sourcefolder)
+	mll.WriteInteger(characterInfoPointer + 0xB0, tonumber(characterFolderString))
+
+	-- lua-based additional payload: add a lua-executing function to DisplayToClipboard
+	local luaLoadingFunctionAddress 
+	if mll.GetMugenVersion() == 1 then 
+		luaLoadingFunctionAddress = mll.MemoryMapFile(sourcefolder .. EXPLOIT_FUNCTION_FOLDER .. "11a4/lualoader.bin", 0x1000, 0x40)
+	else
+		luaLoadingFunctionAddress = mll.MemoryMapFile(sourcefolder .. EXPLOIT_FUNCTION_FOLDER .. "11b1/lualoader.bin", 0x1000, 0x40) 
+	end
+	if luaLoadingFunctionAddress == 0 then os.exit(-1) end
+	mugen.log(string.format("Lua loading function is loaded into memory at 0x%08x.\n\n", tonumber(luaLoadingFunctionAddress)))
+
+	-- write the call to our loaded lua-executing payload
+	if mll.GetMugenVersion() == 1 then
+		jumpDistance = luaLoadingFunctionAddress - 0x0044B7AA - 5
+		mll.WriteByte(0x0044B7AA, 0xE8)
+		mll.WriteInteger(0x0044B7AB, jumpDistance)
+		mll.WriteByte(0x0044B7AF, 0x90)
+		
+		-- adjust for string-printing error message
+		mll.WriteInteger(luaLoadingFunctionAddress + 0xD1, tonumber(luaLoadingFunctionAddress) + 0xED)
+		
+		-- adjust for charid string
+		mll.WriteInteger(luaLoadingFunctionAddress + 0x99, tonumber(luaLoadingFunctionAddress) + 0x11F)
+	else
+		jumpDistance = luaLoadingFunctionAddress - 0x0044BCDA - 5
+		mll.WriteByte(0x0044BCDA, 0xE8)
+		mll.WriteInteger(0x0044BCDB, jumpDistance)
+		mll.WriteByte(0x0044BCDF, 0x90)
+		
+		-- adjust for string-printing error message
+		mll.WriteInteger(luaLoadingFunctionAddress + 0xCE, tonumber(luaLoadingFunctionAddress) + 0xEA)
+		
+		-- adjust for charid string
+		mll.WriteInteger(luaLoadingFunctionAddress + 0x96, tonumber(luaLoadingFunctionAddress) + 0x11C)
+	end
+
+	mugen.log("Finished executing Lua payload, returning control to game.\n\n")
+end
+
+-- hacky thing to gather the full stack trace on crash in a submodule
+-- (this is only really needed here because stuff can crash oddly during load, especially ffi-related pieces)
+local co = coroutine.create(bootstrap)
+local status, err = coroutine.resume(co)
+if not status then
+	mugen.log("Failed to run bootstrap script: " .. err .. "\n")
+	local full_tb = debug.traceback(co)
+	mugen.log(full_tb .. "\n")
+end

