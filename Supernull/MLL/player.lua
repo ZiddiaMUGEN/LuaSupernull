@@ -137,6 +137,24 @@ end
 	-- utility on object
 	function player:getplayeraddress() return self.address end
 	function player:getinfoaddress() return mll.ReadInteger(self.address) end
+
+	function player:animnotoindex(anim)
+		local animpointer = mll.ReadInteger(self:getplayeraddress() + 0x1534)
+		local animcount = mll.ReadInteger(mll.ReadInteger(mll.ReadInteger(animpointer)) + 0x08)
+		local animlistpointer = mll.ReadInteger(mll.ReadInteger(mll.ReadInteger(animpointer)) + 0x1C)
+
+		-- ensure the anim exists + find the registration number (index in the animlist array)
+		local idx = 0
+		local reg_num = -1
+		while idx < animcount do
+			local action_num = mll.ReadInteger(animlistpointer + 0x10 * idx + 0x0C)
+			if action_num == anim then reg_num = mll.ReadInteger(animlistpointer + 0x10 * idx + 0x04) end
+			idx = idx + 1
+		end
+
+		return reg_num
+	end
+
 	-- returns the partner as a player (returns the root's partner if this player is a helper).
 	-- returns nil if the partner does not exist.
 	function player:partner()
@@ -175,6 +193,7 @@ end
 	function player:stateowner()
 		local ownerIndex = mll.ReadInteger(self:getplayeraddress() + 0xCB8)
 		if ownerIndex == -1 then return self end
+		if not player.indexisvalid(ownerIndex) then return self end
 		return player.getplayer(ownerIndex)
 	end
 
@@ -215,8 +234,79 @@ end
 		local x = tab.x or self:vel().x
 		local y = tab.y or self:vel().y
 
-		mll.WriteDouble(self:getplayeraddress() + 0x208, x)
-		mll.WriteDouble(self:getplayeraddress() + 0x210, y)
+		mll.WriteDouble(self:getplayeraddress() + 0x248, x)
+		mll.WriteDouble(self:getplayeraddress() + 0x250, y)
+	end
+
+	function player:velmul(tab)
+		local x = (tab.x or 1.0) * self:vel().x
+		local y = (tab.y or 1.0) * self:vel().y
+
+		mll.WriteDouble(self:getplayeraddress() + 0x248, x)
+		mll.WriteDouble(self:getplayeraddress() + 0x250, y)
+	end
+
+	function player:changeanim(tab)
+		if tab.value == nil then return end
+		local elem = (tab.elem or 1) - 1
+
+		local animpointer = mll.ReadInteger(self:getplayeraddress() + 0x1534)
+		local reg_num = self:animnotoindex(tab.value)
+		if reg_num == -1 then
+			mugen.log("Failed to ChangeAnim - no such anim " .. tab.value .. ".\n")
+			return
+		end
+
+		-- fetch AnimElem data pointers
+		local animdatalistpointer = mll.ReadInteger(mll.ReadInteger(mll.ReadInteger(animpointer)) + 0x18)
+		local animelemcount = mll.ReadInteger(mll.ReadInteger(animdatalistpointer + 0x14 * reg_num) + 0x08)
+		if animelemcount == 0 then
+			mugen.log("Failed to ChangeAnim - anim " .. tab.value .. " has zero elements.\n")
+			return
+		end
+		if animelemcount <= elem then
+			mugen.log("Failed to ChangeAnim - anim " .. tab.value .. " has no " .. elem .. "th element.\n")
+			return
+		end
+
+		local animelempointer = mll.ReadInteger(mll.ReadInteger(animdatalistpointer + 0x14 * reg_num) + 0x18)
+		local nextanimelempointer = animelempointer
+		local nextanimelemno = 0
+		if animelemcount > 1 then
+			nextanimelempointer = mll.ReadInteger(mll.ReadInteger(animdatalistpointer + 0x14 * reg_num) + 0x18) + 0x8C
+			nextanimelemno = 1
+		end
+
+		mll.WriteInteger(animpointer + 0x0C, reg_num) -- index of anim in anim data list
+		mll.WriteInteger(animpointer + 0x10, animelempointer) -- pointer to data block for the first elem
+		mll.WriteInteger(animpointer + 0x14, nextanimelempointer) -- pointer to data block for the next elem
+
+		mll.WriteInteger(animpointer + 0x18, 0x00) -- AnimElemNo(0) (minus 1 since zero-indexed here)
+		mll.WriteInteger(animpointer + 0x1C, 0x00) -- time since last ChangeAnim
+		mll.WriteInteger(animpointer + 0x20, 0x00) -- time since this loop of anim started
+		mll.WriteInteger(animpointer + 0x24, nextanimelemno)
+	end
+
+	function player:trans(tab)
+		local alpha = tab.alpha or {}
+		local source_alpha = alpha.source or 256
+		local dest_alpha = alpha.dest or 0
+
+		local trans_code = mll.ReadInteger(self:getplayeraddress() + 0x14E4)
+		local trans_string = string.lower(tab.trans)
+		if trans_string == "none" then trans_code = 0 end
+		if trans_string == "add" then trans_code = 1 end
+		if trans_string == "add1" then
+			trans_code = 1 
+			source_alpha = 256
+			dest_alpha = 128
+		end
+		if trans_string == "sub" then trans_code = 2 end
+		if trans_string == "addalpha" then trans_code = 3 end
+
+		mll.WriteInteger(self:getplayeraddress() + 0x14E4, trans_code)
+		mll.WriteInteger(self:getplayeraddress() + 0x14E8, source_alpha)
+		mll.WriteInteger(self:getplayeraddress() + 0x14EC, dest_alpha)
 	end
 
 	function player:screenbound(tab)
@@ -241,6 +331,50 @@ end
 		return {value = value, movecamera = {x = movex, y = movey}}
 	end
 
+	function player:_applyassertspecial(flag)
+		flag = string.lower(flag)
+		if flag == "intro" then mll.WriteByte(mugen.getbaseaddress() + 0x1269C, 0x01)
+		elseif flag == "roundnotover" then mll.WriteByte(mugen.getbaseaddress() + 0x1269D, 0x01)
+		elseif flag == "noko" then mll.WriteByte(mugen.getbaseaddress() + 0x1269E, 0x01)
+		elseif flag == "nokosnd" then mll.WriteByte(mugen.getbaseaddress() + 0x1269F, 0x01)
+		elseif flag == "nokoslow" then mll.WriteByte(mugen.getbaseaddress() + 0x126A0, 0x01)
+		elseif flag == "nomusic" then mll.WriteByte(mugen.getbaseaddress() + 0x126A1, 0x01)
+		elseif flag == "globalnoshadow" then mll.WriteByte(mugen.getbaseaddress() + 0x126A2, 0x01)
+		elseif flag == "timerfreeze" then mll.WriteByte(mugen.getbaseaddress() + 0x126A3, 0x01)
+		elseif flag == "nobardisplay" then mll.WriteByte(mugen.getbaseaddress() + 0x126A4, 0x01)
+		elseif flag == "nobg" then mll.WriteByte(mugen.getbaseaddress() + 0x126A5, 0x01)
+		elseif flag == "nofg" then mll.WriteByte(mugen.getbaseaddress() + 0x126A6, 0x01)
+		elseif flag == "nostandguard" then mll.WriteByte(self:getplayeraddress() + 0x2AC, 0x01)
+		elseif flag == "nocrouchguard" then mll.WriteByte(self:getplayeraddress() + 0x2AD, 0x01)
+		elseif flag == "noairuard" then mll.WriteByte(self:getplayeraddress() + 0x2AE, 0x01)
+		elseif flag == "noautoturn" then mll.WriteByte(self:getplayeraddress() + 0x2AF, 0x01)
+		elseif flag == "noshadow" then mll.WriteByte(self:getplayeraddress() + 0x2B0, 0x01)
+		elseif flag == "nojugglecheck" then mll.WriteByte(self:getplayeraddress() + 0x2B1, 0x01)
+		elseif flag == "nowalk" then mll.WriteByte(self:getplayeraddress() + 0x2B2, 0x01)
+		elseif flag == "unguardable" then mll.WriteByte(self:getplayeraddress() + 0x2B3, 0x01)
+		elseif flag == "invisible" then mll.WriteByte(self:getplayeraddress() + 0x2B4, 0x01)
+		end
+	end
+
+	function player:assertspecial(tab)
+		if tab.flag ~= nil then self:_applyassertspecial(tab.flag) end
+		if tab.flag2 ~= nil then self:_applyassertspecial(tab.flag2) end
+		if tab.flag3 ~= nil then self:_applyassertspecial(tab.flag3) end
+	end
+
+	function player:selfstate(tab)
+		mll.WriteInteger(self:getplayeraddress() + 0xCB8, -1) -- state owner ID
+		mll.WriteInteger(self:getplayeraddress() + 0xCC8, 0) -- anim owner ID
+		
+		mll.WriteInteger(self:getplayeraddress() + 0xCBC, 0) -- state code pointer
+		mll.WriteInteger(self:getplayeraddress() + 0xCC0, 0) -- AI data pointer?
+
+		self:statenoset(tab.value)
+		self:timeset(0)
+		if tab.anim ~= nil then self:changeanim({value = tab.anim}) end
+		if tab.ctrl ~= nil then self:ctrlset({ value = tab.ctrl }) end
+	end
+
 	-- not quite the same as TargetState. this will force the `self` player to run the state `stateno` under `stateowner`'s statefile.
 	-- `time` is an optional argument, if provided, it sets the `Time` trigger. if not provided, `Time` is reset to 0.
 	function player:forcecustomstate(stateowner, stateno, time)
@@ -258,6 +392,7 @@ end
 	-- getters
 	function player:displayname() return mll.ReadString(self:getinfoaddress() + 0x30) end
 	function player:isfrozen() return mll.ReadInteger(self:getplayeraddress() + 0x1B4) end
+	function player:time() return mll.ReadInteger(self:getplayeraddress() + 0xED4) end
 	function player:guardflag() return mll.ReadInteger(self:getplayeraddress() + 0xEE8) end
 	function player:helperid() return mll.ReadInteger(self:getplayeraddress() + 0x1644) end
 	function player:parentid() return mll.ReadInteger(self:getplayeraddress() + 0x1648) end

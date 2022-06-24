@@ -88,10 +88,10 @@ function bootstrap()
 		mll.WriteByte(0x0044BCDF, 0x90)
 		
 		-- adjust for string-printing error message
-		mll.WriteInteger(luaLoadingFunctionAddress + 0xCE, tonumber(luaLoadingFunctionAddress) + 0xEA)
+		mll.WriteInteger(luaLoadingFunctionAddress + 0xD1, tonumber(luaLoadingFunctionAddress) + 0xED)
 		
 		-- adjust for charid string
-		mll.WriteInteger(luaLoadingFunctionAddress + 0x96, tonumber(luaLoadingFunctionAddress) + 0x11C)
+		mll.WriteInteger(luaLoadingFunctionAddress + 0x99, tonumber(luaLoadingFunctionAddress) + 0x11F)
 	end
 
 	mugen.log("Finished executing Lua payload, returning control to game.\n\n")

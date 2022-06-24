@@ -43,6 +43,7 @@ je .loopcopydone
 jmp .loopcopy
 
 .loopcopydone:
+mov byte [ecx], 0x00
 ;; call the file loading function
 mov ecx, dword [ebp]
 mov ecx, dword [ecx+0xB0]

@@ -90,10 +90,6 @@ The `mugen` module exposes some basic functionality for working with MUGEN. A po
 
 `mugen.roundnoset(i)` - Sets the value of the `MatchNo` trigger.
 
-### AssertSpecial
-
-Try `mugen.isassertxyz()` where `xyz` is the name of an AssertSpecial flag (in lowercase). To set, try `mugen.setassertxyz(i)` where `xyz` is the name of an AssertSpecial flag. The value you provide should fit into 1 byte (0 ~ 255, but only functional values are 0 and 1).
-
 ## Unknown or Unconfirmed
 
 `mugen.winningteam()` - Presumed to return the team which won the current round, but unconfirmed. Returned `0` in my tests.
@@ -324,6 +320,8 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:isfrozen()` - Returns the player's frozen status, as an integer (1 or 0).
 
+`player:time()` - Returns the value of the `Time` trigger.
+
 `player:helpertype()` - Returns the player's helper type (e.g. 0 = Normal-type Helper). Note this value is only meaningful if `player:ishelper()` returns `true`.
 
 `player:helperid()` - Returns the player's HelperID (or zero for non-Helpers).
@@ -382,9 +380,19 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:getscreenbound()` - Returns a table with the current ScreenBound parameters applied to the player.
 
+`player:selfstate(t)` - Applies the effects of a SelfState state controller. `t` is a table accepting named properties for the arguments applicable to a regular SelfState (i.e. value, anim, ctrl).
+
 `player:posset(t)` - Applies the effects of a PosSet state controller. `t` is a table accepting named properties for the arguments applicable to a regular PosSet (i.e. x, y).
 
 `player:velset(t)` - Applies the effects of a VelSet state controller. `t` is a table accepting named properties for the arguments applicable to a regular VelSet (i.e. x, y).
+
+`player:velmul(t)` - Applies the effects of a VelMul state controller. `t` is a table accepting named properties for the arguments applicable to a regular VelMul (i.e. x, y).
+
+`player:changeanim(t)` - Applies the effects of a ChangeAnim state controller. `t` is a table accepting named properties for the arguments applicable to a regular ChangeAnim (i.e. value, elem). Note that the `elem` parameter may not function correctly currently.
+
+`player:trans(t)` - Applies the effects of a Trans state controller. `t` is a table accepting named properties for the arguments applicable to a regular Trans (i.e. trans, alpha). `alpha` should be a subtable with optional parameters `source`, `dest`.
+
+`player:assertspecial(t)` - Applies the effects of an AssertSpecial state controller. `t` is a table accepting named properties for the arguments applicable to a regular AssertSpecial (i.e. flag, flag2, flag3).
 
 `player:varset(idx, value)` - Applies the effects of a VarSet state controller against the regular variable with index `idx`.
 
