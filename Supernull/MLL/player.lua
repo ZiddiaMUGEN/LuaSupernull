@@ -163,23 +163,6 @@ end
 		return manager:iterator()
 	end
 
-	function player:animnotoindex(anim)
-		local animpointer = mll.ReadInteger(self:getplayeraddress() + 0x1534)
-		local animcount = mll.ReadInteger(mll.ReadInteger(mll.ReadInteger(animpointer)) + 0x08)
-		local animlistpointer = mll.ReadInteger(mll.ReadInteger(mll.ReadInteger(animpointer)) + 0x1C)
-
-		-- ensure the anim exists + find the registration number (index in the animlist array)
-		local idx = 0
-		local reg_num = -1
-		while idx < animcount do
-			local action_num = mll.ReadInteger(animlistpointer + 0x10 * idx + 0x0C)
-			if action_num == anim then reg_num = mll.ReadInteger(animlistpointer + 0x10 * idx + 0x04) end
-			idx = idx + 1
-		end
-
-		return reg_num
-	end
-
 	-- returns the partner as a player (returns the root's partner if this player is a helper).
 	-- returns nil if the partner does not exist.
 	function player:partner()
@@ -275,41 +258,39 @@ end
 		if tab.value == nil then return end
 		local elem = (tab.elem or 1) - 1
 
-		local animpointer = mll.ReadInteger(self:getplayeraddress() + 0x1534)
-		local reg_num = self:animnotoindex(tab.value)
-		if reg_num == -1 then
+		local a = self:anim(tab.value)
+		if a == nil then
 			mugen.log("Failed to ChangeAnim - no such anim " .. tab.value .. ".\n")
 			return
 		end
 
-		-- fetch AnimElem data pointers
-		local animdatalistpointer = mll.ReadInteger(mll.ReadInteger(mll.ReadInteger(animpointer)) + 0x18)
-		local animelemcount = mll.ReadInteger(mll.ReadInteger(animdatalistpointer + 0x14 * reg_num) + 0x08)
-		if animelemcount == 0 then
-			mugen.log("Failed to ChangeAnim - anim " .. tab.value .. " has zero elements.\n")
+		if a:elementcount() == 0 then
+			mugen.log("Failed to ChangeAnim - animation " .. tab.value .. " has zero elements.\n")
 			return
 		end
-		if animelemcount <= elem then
+		if elem > a:elementcount() then
 			mugen.log("Failed to ChangeAnim - anim " .. tab.value .. " has no " .. elem .. "th element.\n")
 			return
 		end
 
-		local animelempointer = mll.ReadInteger(mll.ReadInteger(animdatalistpointer + 0x14 * reg_num) + 0x18)
-		local nextanimelempointer = animelempointer
-		local nextanimelemno = 0
-		if animelemcount > 1 then
-			nextanimelempointer = mll.ReadInteger(mll.ReadInteger(animdatalistpointer + 0x14 * reg_num) + 0x18) + 0x8C
-			nextanimelemno = 1
+		-- get the current and next elements
+		local current_element = a:element(elem)
+		local next_element = a:element(elem + 1)
+		local next_element_index = elem + 1
+		if next_element == nil then
+			next_element = a:element(0)
+			next_element_index = 1
 		end
 
-		mll.WriteInteger(animpointer + 0x0C, reg_num) -- index of anim in anim data list
-		mll.WriteInteger(animpointer + 0x10, animelempointer) -- pointer to data block for the first elem
-		mll.WriteInteger(animpointer + 0x14, nextanimelempointer) -- pointer to data block for the next elem
+		local animpointer = mll.ReadInteger(self:getplayeraddress() + 0x1534)
+		mll.WriteInteger(animpointer + 0x0C, a:index()) -- index of anim in anim data list
+		mll.WriteInteger(animpointer + 0x10, current_element.dataaddr) -- pointer to data block for the first elem
+		mll.WriteInteger(animpointer + 0x14, next_element.dataaddr) -- pointer to data block for the next elem
 
 		mll.WriteInteger(animpointer + 0x18, 0x00) -- AnimElemNo(0) (minus 1 since zero-indexed here)
 		mll.WriteInteger(animpointer + 0x1C, 0x00) -- time since last ChangeAnim
 		mll.WriteInteger(animpointer + 0x20, 0x00) -- time since this loop of anim started
-		mll.WriteInteger(animpointer + 0x24, nextanimelemno)
+		mll.WriteInteger(animpointer + 0x24, next_element_index)
 	end
 
 	function player:trans(tab)

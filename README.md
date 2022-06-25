@@ -14,6 +14,8 @@ The basic flow for this supernull is as follows:
 
 In this example, step 4 loads a Lua runtime library DLL and a Lua FFI DLL, which allows declarations of C function prototypes in Lua which then map back and execute C API functions. Through FFI, we're able to run VirtualProtect, then modify the game code, inject our custom code from files, etc.
 
+For an example of this method in use (along with extensive use of the Lua library), take a look at https://github.com/ZiddiaMUGEN/Sad-Assist-2nd
+
 # Library
 
 Beyond just the supernull steps, part of the goal for this project was to provide an interface for working through Lua, rather than Assembly or variable-based memory editing. This makes the Supernull concept more accessible and easier to drop into an existing character (it's much easier to just pick up Lua and write `player.current():displaynameset("NewName")` than to learn Assembly and mess with the MUGEN memory layout!).
