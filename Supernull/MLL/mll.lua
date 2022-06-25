@@ -39,6 +39,8 @@ local MugenLuaLibrary = { TEMPLATE_VERSION = 7 }
 		require(sourcefolder .. "player")
 		-- animation module
 		require(sourcefolder .. "anim")
+		-- state module
+		require(sourcefolder .. "state")
 
 		_G.MLL_TEMPLATE_VERSION = MugenLuaLibrary.TEMPLATE_VERSION
 	else

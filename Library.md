@@ -304,7 +304,11 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:animations()` - Returns an iterator over all animations the player owns, as `anim` objects.
 
-`player:anim(i)` - Returns an anim object representing the animation with action number `i` (or `nil`, if the action does not exist).
+`player:anim(i)` - Returns an `anim` object representing the animation with action number `i` (or `nil`, if the action does not exist).
+
+`player:states()` - Returns an iterator over all states the player owns, as `state` objects.
+
+`player:state(i)` - Returns a `state` object representing the state with statedef number `i` (or `nil`, if the state does not exist).
 
 `player:animcount()` - Returns the number of animations owned by the player.
 
@@ -432,9 +436,47 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:rootdist()` - Same as `player:parentdist()`
 
+# State Module
+
+State module is a new module introduced to help explore and interface with character state data. In order to reference a state object, you should use `player:state` or `player:states`.
+
+## state
+
+state submodule is used to represent a single statedef.
+
+`state:stateno()` - Returns the state number.
+
+`state:statetype()` - Returns a number representing the type of the state.
+
+`state:movetype()` - Returns a number representing the movetype of the state.
+
+`state:physics()` - Returns a number representing the physics of the state.
+
+`state:juggle()` - Returns the amount of juggle points the state requires.
+
+`state:animid()` - Returns the animation the player changes to upon entering the state.
+
+`state:controller(i)` - Returns the `controller` object for the given index.
+
+`state:controllers()` - Returns an iterator over `controller` objects.
+
+## controller
+
+controller submodule is used to represent a single state controller.
+
+`controller:triggercount()` - Returns the number of triggers applied to this controller (note: number of trigger conditions and not trigger lines; 5x `trigger1` will still only count as 1 for `triggercount`)
+
+`controller:persistent()` - Returns the value of `persistent` for this controller. Note that this returns an integer. MUGEN also uses an integer to store `persistent`, but only uses the lowest byte for processing. Consider using `controller:persistent() % 256` if you need the value used during processing.
+
+`controller:ignorehitpause()` - Returns the value of `ignorehitpause` for this controller. Note that this returns an integer. MUGEN also uses an integer to store `ignorehitpause`, but treats it as a boolean.
+
+`controller:type()` - Returns a byte representing the state controller type.
+
+`controller:properties()` - Returns a table containing properties specific to this controller type.
+
 # Anim Module
 
-Anim module is a new module introduced to help explore and interface with character animations. In order to reference an anim object, you should use `player:anim`.
+Anim module is a new module introduced to help explore and interface with character animations. In order to reference an anim object, you should use `player:anim` or `player:animations`.
 
 ## anim
 
@@ -476,17 +518,17 @@ Note: for the below iterators, the parameters defining the CLSN boxes are screen
 
 `element:clsn2()` - returns an iterator over all CLSN2 boxes in the element. A CLSN2 box is a table defined with parameters `top`, `bottom`, `left`, and `right`.
 
-## animcontroller
+## animmanager
 
-animcontroller submodule is used internally to help read and identify animations. It's generally not intended for direct use (you can use wrapper functions from `player` instead).
+animmanager submodule is used internally to help read and identify animations. It's generally not intended for direct use (you can use wrapper functions from `player` instead).
 
-`animcontroller:new(p)` - instantiate an animcontroller instance. `p` should be the player whose animations you want to work with.
+`animmanager:new(p)` - instantiate an animmanager instance. `p` should be the player whose animations you want to work with.
 
-`animcontroller:count()` - returns the total number of animations this player owns.
+`animmanager:count()` - returns the total number of animations this player owns.
 
-`animcontroller:iterator()` - returns an iterator over all of the player's animations. 
+`animmanager:iterator()` - returns an iterator over all of the player's animations. 
 
-`animcontroller:animfromid(i)` - returns the `anim` object whose action number matches `i`.
+`animmanager:animfromid(i)` - returns the `anim` object whose action number matches `i`.
 
 # MLL Module
 

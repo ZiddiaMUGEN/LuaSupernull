@@ -144,13 +144,23 @@ end
 	end
 
 	function player:anim(animno)
-		local controller = animcontroller:new(self)
-		return controller:animfromid(animno)
+		local manager = animmanager:new(self)
+		return manager:animfromid(animno)
 	end
 
 	function player:animations()
-		local controller = animcontroller:new(self)
-		return controller:iterator()
+		local manager = animmanager:new(self)
+		return manager:iterator()
+	end
+
+	function player:state(stateno)
+		local manager = statemanager:new(self)
+		return manager:statefromid(stateno)
+	end
+
+	function player:states()
+		local manager = statemanager:new(self)
+		return manager:iterator()
 	end
 
 	function player:animnotoindex(anim)
@@ -414,8 +424,8 @@ end
 	function player:parentid() return mll.ReadInteger(self:getplayeraddress() + 0x1648) end
 	function player:helpertype() return mll.ReadInteger(self:getplayeraddress() + 0x1654) end
 	function player:animcount() 
-		local controller = animcontroller:new(self)
-		return controller:count()
+		local manager = animmanager:new(self)
+		return manager:count()
 	end
 
 	-- setters

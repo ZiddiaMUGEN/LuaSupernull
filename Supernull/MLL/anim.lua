@@ -1,9 +1,9 @@
-local animcontroller = {}
-animcontroller.__index = animcontroller
+local animmanager = {}
+animmanager.__index = animmanager
 
 -- constructor, stores the address to the animation root pointer
 -- p should be a player object, so the controller can reference the player address.
-function animcontroller:new(p)
+function animmanager:new(p)
     a = { }
     setmetatable(a, self)
     a.address = mll.ReadInteger(mll.ReadInteger(mll.ReadInteger(p:getplayeraddress() + 0x1534)))
@@ -11,12 +11,12 @@ function animcontroller:new(p)
 end
 
 -- utility, anim controller is able to access anim pointers and anim count
-function animcontroller:animinfolist() return mll.ReadInteger(self.address + 0x1C) end
-function animcontroller:animdatalist() return mll.ReadInteger(self.address + 0x18) end
-function animcontroller:count() return mll.ReadInteger(self.address + 0x08) end
+function animmanager:animinfolist() return mll.ReadInteger(self.address + 0x1C) end
+function animmanager:animdatalist() return mll.ReadInteger(self.address + 0x18) end
+function animmanager:count() return mll.ReadInteger(self.address + 0x08) end
 
 -- iterator over each anim, builds a new anim object from each
-function animcontroller:iterator()
+function animmanager:iterator()
     local idx = -1
     return function ()
         idx = idx + 1
@@ -26,19 +26,19 @@ end
 
 -- iterates over all animations until we find one with a matching ID
 -- returns nil if none is found
-function animcontroller:animfromid(id)
+function animmanager:animfromid(id)
     for a in self:iterator() do
         if a:id() == id then return a end
     end
     return nil
 end
 
-function animcontroller:animfromindex(idx)
+function animmanager:animfromindex(idx)
     if idx >= self:count() then return nil end
-    return anim:new(self:animinfolist() + 0x10 * idx, self:animdatalist() + 0x14 * idx) end
+    return anim:new(self:animinfolist() + 0x10 * idx, self:animdatalist() + 0x14 * idx)
 end
 
-_G.animcontroller = animcontroller
+_G.animmanager = animmanager
 
 local anim = {}
 anim.__index = anim
@@ -94,8 +94,14 @@ function element:clsn2data() return mll.ReadInteger(self.dataaddr + 0x88) end
 function element:length() return mll.ReadInteger(self.dataaddr + 0x04) end
 function element:hasclsn1() return self:clsn1data() ~= 0 end
 function element:hasclsn2() return self:clsn2data() ~= 0 end
-function element:clsn1count() return mll.ReadInteger(self:clsn1data() + 0x04) end
-function element:clsn2count() return mll.ReadInteger(self:clsn2data() + 0x04) end
+function element:clsn1count() 
+    if not self:hasclsn1() then return 0 end
+    return mll.ReadInteger(self:clsn1data() + 0x04) 
+end
+function element:clsn2count() 
+    if not self:hasclsn2() then return 0 end
+    return mll.ReadInteger(self:clsn2data() + 0x04) 
+end
 
 function element:clsn1()
     local idx = -1
