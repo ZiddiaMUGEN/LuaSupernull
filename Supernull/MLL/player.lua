@@ -137,11 +137,6 @@ end
 	-- utility on object
 	function player:getplayeraddress() return self.address end
 	function player:getinfoaddress() return mll.ReadInteger(self.address) end
-	function player:screentolocal(t) 
-		local x = t.x or 0
-		local y = t.y or 0
-		return {x = (x * self:localcoord().x) / mugen.screenwidth(), y = (y * self:localcoord().y) / mugen.screenheight()}
-	end
 
 	function player:anim(animno)
 		local manager = animmanager:new(self)

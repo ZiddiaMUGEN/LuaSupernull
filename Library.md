@@ -332,8 +332,6 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:localcoord()` - Returns a table containing the player's localcoord. Table contains fields `x` and `y`.
 
-`player:screentolocal(t)` - Converts the screen co-ordinate `t` into a co-ordinate under the player's local co-ordinate system. `t` should be a table with at least one of `x` and `y`. Returns a table with fields `x` and `y`.
-
 `player:time()` - Returns the value of the `Time` trigger.
 
 `player:helpertype()` - Returns the player's helper type (e.g. 0 = Normal-type Helper). Note this value is only meaningful if `player:ishelper()` returns `true`.
@@ -416,6 +414,8 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:sysfvarset(idx, value)` - Applies the effects of a VarSet state controller against the float system variable with index `idx`.
 
+`player:unitsize()` - Returns a scale factor between the player's localcoord and the screen co-ordinate system.
+
 ## Unknown or Unconfirmed
 
 `player:hitdefattrmatch(??)` - Don't even know the signature for this one. Very likely it does not work with current `player` wrapper. If you want to play with it and figure it out, try using `p.wrapped:hitdefattrmatch(...)` (where `p` is a player object).
@@ -427,8 +427,6 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 `player:warning(s)` - Perhaps the same as `mugen.warning(s)`?
 
 `player:error(s)` - Perhaps the same as `mugen.error(s)`?
-
-`player:unitsize()` - Returns a number. Purpose is unknown.
 
 `player:rc()` - Used in `const`, appears to be some sort of internal interface.
 
@@ -512,7 +510,7 @@ element submodule is used to represent a single animation element.
 
 `element:clsn2count()` - returns the number of CLSN2 boxes in the element (including default boxes).
 
-Note: for the below iterators, the parameters defining the CLSN boxes are screen co-ordinates, and may not match the values defined in the AIR file. To recover the number from the AIR file, you must pass the co-ordinates through `player:screentolocal`.
+Note: for the below iterators, the parameters defining the CLSN boxes are screen co-ordinates, and may not match the values defined in the AIR file. To recover the number from the AIR file, you must divide the co-ordinates by `player:unitsize()`.
 
 `element:clsn1()` - returns an iterator over all CLSN1 boxes in the element. A CLSN1 box is a table defined with parameters `top`, `bottom`, `left`, and `right`.
 
