@@ -5,7 +5,7 @@
 ---- most functions exposed in mll are quite low-level (raw read/write of memory, some C library functions)
 ---- if you're not comfortable with raw memory access, you may be able to leverage the upgraded player and mugen modules instead, which expose a bunch of friendly functions wrapping some mll calls.
 
-local MugenLuaLibrary = { TEMPLATE_VERSION = 6 }
+local MugenLuaLibrary = { TEMPLATE_VERSION = 7 }
 
 -- BEGIN EXTERNAL MODULES
 
@@ -37,6 +37,8 @@ local MugenLuaLibrary = { TEMPLATE_VERSION = 6 }
 		require(sourcefolder .. "mugen")
 		-- player module wrapper
 		require(sourcefolder .. "player")
+		-- animation module
+		require(sourcefolder .. "anim")
 
 		_G.MLL_TEMPLATE_VERSION = MugenLuaLibrary.TEMPLATE_VERSION
 	else

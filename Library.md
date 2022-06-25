@@ -302,6 +302,12 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player.current()` - Returns the player object which is currently running a Lua script. WARNING: THIS IS NOT GUARANTEED TO BE CORRECT IF YOU SPAWN BACKGROUNDED TASKS, RUN LUA OUTSIDE OF THE DTC ENVIRONMENT, ETC. THE DTC PATCH IS RESPONSIBLE FOR SETTING THIS CORRECTLY.
 
+`player:animations()` - Returns an iterator over all animations the player owns, as `anim` objects.
+
+`player:anim(i)` - Returns an anim object representing the animation with action number `i` (or `nil`, if the action does not exist).
+
+`player:animcount()` - Returns the number of animations owned by the player.
+
 `player:partner()` - Returns the player object representing the partner of another player. Returns the root's partner for a Helper. Returns `nil` if no partner exists.
 
 `player:parent()` - Returns the player object representing the parent of another player (or the same player if it has no parent).
@@ -319,6 +325,10 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 `player:displayname()` - Returns the player's display name, as a string.
 
 `player:isfrozen()` - Returns the player's frozen status, as an integer (1 or 0).
+
+`player:localcoord()` - Returns a table containing the player's localcoord. Table contains fields `x` and `y`.
+
+`player:screentolocal(t)` - Converts the screen co-ordinate `t` into a co-ordinate under the player's local co-ordinate system. `t` should be a table with at least one of `x` and `y`. Returns a table with fields `x` and `y`.
 
 `player:time()` - Returns the value of the `Time` trigger.
 
@@ -421,6 +431,62 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 `player:parentdist()` - Easy to guess the purpose, but I didn't have a test character using Helpers handy. (We can probably assume this follows the convention set by `vel`, `pos`, etc. with a table being returned).
 
 `player:rootdist()` - Same as `player:parentdist()`
+
+# Anim Module
+
+Anim module is a new module introduced to help explore and interface with character animations. In order to reference an anim object, you should use `player:anim`.
+
+## anim
+
+anim submodule is used to represent a single animation.
+
+`anim:id()` - Returns the action number of this animation.
+
+`anim:index()` - Returns the index of this animation.
+
+`anim:elementcount()` - Returns the number of elements in the animation.
+
+`anim:length()` - Returns the total length of the animation, in frames.
+
+`anim:hasloop()` - Returns a boolean indicating if the animation has a loop.
+
+`anim:loop()` - Returns a table with elements `frame`, `element` indicating the frame and animation element loop begins on.
+
+`anim:element(i)` - Returns the `element` object for the provided index (or `nil` if no such element exists).
+
+`anim:elements()` - returns an iterator over all of the animation's elements.
+
+## element
+
+element submodule is used to represent a single animation element.
+
+`element:length()` - returns the number of frames this element lasts.
+
+`element:hasclsn1()` - returns a boolean indicating if this element contains a CLSN1 box (including default boxes).
+
+`element:hasclsn2()` - returns a boolean indicating if this element contains a CLSN2 box (including default boxes).
+
+`element:clsn1count()` - returns the number of CLSN1 boxes in the element (including default boxes).
+
+`element:clsn2count()` - returns the number of CLSN2 boxes in the element (including default boxes).
+
+Note: for the below iterators, the parameters defining the CLSN boxes are screen co-ordinates, and may not match the values defined in the AIR file. To recover the number from the AIR file, you must pass the co-ordinates through `player:screentolocal`.
+
+`element:clsn1()` - returns an iterator over all CLSN1 boxes in the element. A CLSN1 box is a table defined with parameters `top`, `bottom`, `left`, and `right`.
+
+`element:clsn2()` - returns an iterator over all CLSN2 boxes in the element. A CLSN2 box is a table defined with parameters `top`, `bottom`, `left`, and `right`.
+
+## animcontroller
+
+animcontroller submodule is used internally to help read and identify animations. It's generally not intended for direct use (you can use wrapper functions from `player` instead).
+
+`animcontroller:new(p)` - instantiate an animcontroller instance. `p` should be the player whose animations you want to work with.
+
+`animcontroller:count()` - returns the total number of animations this player owns.
+
+`animcontroller:iterator()` - returns an iterator over all of the player's animations. 
+
+`animcontroller:animfromid(i)` - returns the `anim` object whose action number matches `i`.
 
 # MLL Module
 

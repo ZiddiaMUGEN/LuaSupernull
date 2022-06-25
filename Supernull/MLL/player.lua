@@ -137,6 +137,21 @@ end
 	-- utility on object
 	function player:getplayeraddress() return self.address end
 	function player:getinfoaddress() return mll.ReadInteger(self.address) end
+	function player:screentolocal(t) 
+		local x = t.x or 0
+		local y = t.y or 0
+		return {x = (x * self:localcoord().x) / mugen.screenwidth(), y = (y * self:localcoord().y) / mugen.screenheight()}
+	end
+
+	function player:anim(animno)
+		local controller = animcontroller:new(self)
+		return controller:animfromid(animno)
+	end
+
+	function player:animations()
+		local controller = animcontroller:new(self)
+		return controller:iterator()
+	end
 
 	function player:animnotoindex(anim)
 		local animpointer = mll.ReadInteger(self:getplayeraddress() + 0x1534)
@@ -391,12 +406,17 @@ end
 	
 	-- getters
 	function player:displayname() return mll.ReadString(self:getinfoaddress() + 0x30) end
+	function player:localcoord() return {x = mll.ReadDouble(self:getinfoaddress() + 0x90), y = mll.ReadDouble(self:getinfoaddress() + 0x98)} end
 	function player:isfrozen() return mll.ReadInteger(self:getplayeraddress() + 0x1B4) end
 	function player:time() return mll.ReadInteger(self:getplayeraddress() + 0xED4) end
 	function player:guardflag() return mll.ReadInteger(self:getplayeraddress() + 0xEE8) end
 	function player:helperid() return mll.ReadInteger(self:getplayeraddress() + 0x1644) end
 	function player:parentid() return mll.ReadInteger(self:getplayeraddress() + 0x1648) end
 	function player:helpertype() return mll.ReadInteger(self:getplayeraddress() + 0x1654) end
+	function player:animcount() 
+		local controller = animcontroller:new(self)
+		return controller:count()
+	end
 
 	-- setters
 	function player:nameset(value) mll.WriteString(self:getinfoaddress() + 0x00, value) end
