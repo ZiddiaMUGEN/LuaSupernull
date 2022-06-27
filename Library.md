@@ -318,6 +318,8 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:root()` - Returns the player object representing the root of another player (or the same player if it has no root).
 
+`player:enemy(i)` - Returns the `i`th enemy as a player object, or `nil` if there is no enemy. If you omit `i` it will return the first enemy.
+
 `player:stateowner()` - Returns the player object representing the state owner of another player (or the same player if it is not custom stated).
 
 `player:forcecustomstate(p, i1, i2)` - Forces the player object to enter a custom state. Custom state runs code from player object `p`'s files. Sets `StateNo` to `i1` and, optionally, sets `Time` to `i2`. If `i2` is ommitted, `Time` will be set to 0. Example: `player.playerfromid(57):forcecustomstate(player.current(), 1000)` - forces the player with PlayerID 57 into custom state 1000 from the current player's state files.
@@ -341,6 +343,14 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 `player:parentid()` - Returns the player's ParentID (or zero for non-Helpers).
 
 `player:guardflag()` - Gets the value of the guard flag (which prevents the effect of `Target*` state controllers).
+
+`player:stateno()` - Returns the value of the `StateNo` trigger.
+
+`player:prevstateno()` - Returns the value of the `PrevStateNo` trigger.
+
+`player:facing()` - Returns the value of the `Facing` trigger.
+
+`player:movecontact()` - Returns the value of the `MoveContact` trigger.
 
 `player:nameset(s)` - Sets the player's internal name.
 
@@ -450,9 +460,15 @@ state submodule is used to represent a single statedef.
 
 `state:physics()` - Returns a number representing the physics of the state.
 
-`state:juggle()` - Returns the amount of juggle points the state requires.
+`state:juggle()` - Returns the amount of juggle points the state requires, as a `trigger` object.
 
-`state:animid()` - Returns the animation the player changes to upon entering the state.
+`state:animid()` - Returns the animation the player changes to upon entering the state, as a `trigger` object.
+
+`state:xvel()` - Returns the x component of the state's entry velocity, as a `trigger` object.
+
+`state:yvel()` - Returns the y component of the state's entry velocity, as a `trigger` object.
+
+`state:poweradd()` - Returns the amount of power the player gains upon entering the state, as a `trigger` object.
 
 `state:controller(i)` - Returns the `controller` object for the given index.
 
@@ -470,7 +486,15 @@ controller submodule is used to represent a single state controller.
 
 `controller:type()` - Returns a byte representing the state controller type.
 
-`controller:properties()` - Returns a table containing properties specific to this controller type.
+`controller:properties()` - Returns a table containing properties specific to this controller type. Each value in the table is a `trigger` object.
+
+## trigger
+
+trigger submodule is used to represent a trigger or a trigger-like value (ex. when an expression is used as a parameter, this is treated as a trigger).
+
+`trigger:isconstant()` - Returns a boolean indicating whether the trigger's value is constant.
+
+`trigger:constant()` - Returns the constant value of the trigger. If the trigger is not constant, returns 0.
 
 # Anim Module
 
