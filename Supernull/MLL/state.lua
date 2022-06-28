@@ -136,20 +136,49 @@ function controller:properties()
         return {x = trigger:new(self.dataaddr + 0x3C, 1), y = trigger:new(self.dataaddr + 0x48, 1)}
     elseif self:type() == 0x25 then
         -- HitDef
-        -- separate this into another function just for readability...
-        return self:_hitdef()
+        local extension = mll.ReadInteger(self.dataaddr + 0x60)
+        return self:_hitdef(extension)
+    elseif self:type() == 0x27 then
+        -- Projectile
+        local extension = mll.ReadInteger(self.dataaddr + 0x60)
+        -- Projectile has an inner HitDef storing properties as well
+        local props = self:_hitdef(extension + 0x1A8)
+        -- just add the Proj properties onto the existing hitdef table
+        props.projid = trigger:new(extension + 0x00)
+        props.offset = {x = trigger:new(extension + 0x0C), y = trigger:new(extension + 0x18)}
+        props.postype = trigger_:new(extension + 0x24)
+        props.projremove = trigger:new(extension + 0x28)
+        props.projremovetime = trigger:new(extension + 0x34)
+        props.projmisstime = trigger:new(extension + 0x40)
+        props.projedgebound = trigger:new(extension + 0x4C)
+        props.projstagebound = trigger:new(extension + 0x58)
+        props.projheightbound = {low = trigger:new(extension + 0x64), high = trigger:new(extension + 0x70)}
+        props.projhits = trigger:new(extension + 0x7C)
+        props.projpriority = trigger:new(extension + 0x88)
+        props.projanim = trigger:new(extension + 0x94)
+        props.projhitanim = trigger:new(extension + 0xA0)
+        props.projremanim = trigger:new(extension + 0xAC)
+        props.projcancelanim = trigger:new(extension + 0xB8)
+        props.projshadow = {r = trigger:new(extension + 0xC4), g = trigger:new(extension + 0xD0), b = trigger:new(extension + 0xDC)}
+        props.projsprpriority = trigger:new(extension + 0xE8)
+        props.velocity = {x = trigger:new(extension + 0xF4, 1), y = trigger:new(extension + 0x100, 1)}
+        props.velmul = {x = trigger:new(extension + 0x10C, 1), y = trigger:new(extension + 0x118, 1)}
+        props.remvelocity = {x = trigger:new(extension + 0x124, 1), y = trigger:new(extension + 0x130, 1)}
+        props.accel = {x = trigger:new(extension + 0x13C, 1), y = trigger:new(extension + 0x148, 1)}
+        props.projscale = {x = trigger:new(extension + 0x154, 1), y = trigger:new(extension + 0x160, 1)}
+        props.supermovetime = trigger:new(extension + 0x16C)
+        props.pausemovetime = trigger:new(extension + 0x178)
+        return props
     end
 end
 
-function controller:_hitdef()
-    local extension = mll.ReadInteger(self.dataaddr + 0x60)
+function controller:_hitdef(extension)
     return {
-        affectteam = trigger_:new(mll.ReadInteger(extension + 0x00)),
-        hitdefattr = trigger_:new(mll.ReadInteger(extension + 0x04)),
+        affectteam = trigger_:new(extension + 0x00),
+        hitdefattr = trigger_:new(extension + 0x04),
         id = trigger:new(extension + 0x08),
         chainid = trigger:new(extension + 0x14),
-        nochainid1 = trigger:new(extension + 0x20),
-        nochainid2 = trigger:new(extension + 0x2C),
+        nochainid = {first = trigger:new(extension + 0x20), second = trigger:new(extension + 0x2C)},
         kill = trigger:new(extension + 0x38),
         guardkill = trigger:new(extension + 0x44),
         fallkill = trigger:new(extension + 0x50),
@@ -168,8 +197,8 @@ function controller:_hitdef()
         hitsoundindex = trigger:new(extension + 0xEC),
         guardsoundgroup = trigger:new(extension + 0xFC),
         guardsoundindex = trigger:new(extension + 0x108),
-        guardflag = trigger_:new(mll.ReadInteger(extension + 0x118)),
-        hitflag = trigger_:new(mll.ReadInteger(extension + 0x11C)),
+        guardflag = trigger_:new(extension + 0x118),
+        hitflag = trigger_:new(extension + 0x11C),
         priorityval = trigger:new(extension + 0x120),
         prioritytype = trigger:new(extension + 0x12C),
         p1stateno = trigger:new(extension + 0x130),
@@ -177,44 +206,39 @@ function controller:_hitdef()
         p2getp1state = trigger:new(extension + 0x148),
         sprpriority = trigger:new(extension + 0x160),
         p2sprpriority = trigger:new(extension + 0x16C),
-        animtype = trigger_:new(mll.ReadInteger(extension + 0x178)),
+        animtype = trigger_:new(extension + 0x178),
         forcestand = trigger:new(extension + 0x17C),
         forcenofall = trigger:new(extension + 0x188),
         falldamage = trigger:new(extension + 0x19C),
-        fallanimtype = trigger_:new(mll.ReadInteger(extension + 0x1A8)),
+        fallanimtype = trigger_:new(extension + 0x1A8),
         fallxvelocity = trigger:new(extension + 0x1AC, 1),
         fallyvelocity = trigger:new(extension + 0x1B8, 1),
         fallrecover = trigger:new(extension + 0x1C4),
         fallrecovertime = trigger:new(extension + 0x1D0),
         fall = trigger:new(extension + 0x21C),
         sparkno = trigger:new(extension + 0x228),
-        sparkno_uses_player_air = trigger_:new(mll.ReadInteger(extension + 0x234)),
+        sparkno_uses_player_air = trigger_:new(extension + 0x234),
         guardsparkno = trigger:new(extension + 0x238),
-        guardsparkno_uses_player_air = trigger_:new(mll.ReadInteger(extension + 0x244)),
-        sparkx = trigger:new(extension + 0x248),
-        sparky = trigger:new(extension + 0x254),
+        guardsparkno_uses_player_air = trigger_:new(extension + 0x244),
+        sparkxy = {x = trigger:new(extension + 0x248), y = trigger:new(extension + 0x254)},
         p1facing = trigger:new(extension + 0x260),
         p1getp2facing = trigger:new(extension + 0x26C),
-        snapx = trigger:new(extension + 0x278),
-        snapy = trigger:new(extension + 0x284),
+        snap = {x = trigger:new(extension + 0x278), y = trigger:new(extension + 0x284)},
         p2facing = trigger:new(extension + 0x2A8),
-        groundtype = trigger_:new(mll.ReadInteger(extension + 0x2B4)),
+        groundtype = trigger_:new(extension + 0x2B4),
         groundhittime = trigger:new(extension + 0x2B8),
         groundslidetime = trigger:new(extension + 0x2C4),
-        groundvelocityx = trigger:new(extension + 0x2D0, 1),
-        groundvelocityy = trigger:new(extension + 0x2DC, 1),
+        groundvelocity = {x = trigger:new(extension + 0x2D0, 1), y = trigger:new(extension + 0x2DC, 1)},
         groundcornerpushveloff = trigger:new(extension + 0x2E8, 1),
-        airtype = trigger_:new(mll.ReadInteger(extension + 0x2F4)),
-        airanimtype = trigger_:new(mll.ReadInteger(extension + 0x2F8)),
+        airtype = trigger_:new(extension + 0x2F4),
+        airanimtype = trigger_:new(extension + 0x2F8),
         airhittime = trigger:new(extension + 0x2FC),
         airfall = trigger:new(extension + 0x308),
-        airvelocityx = trigger:new(extension + 0x314, 1),
-        airvelocityy = trigger:new(extension + 0x320, 1),
+        airvelocity = {x = trigger:new(extension + 0x314, 1), y = trigger:new(extension + 0x320, 1)},
         aircornerpushveloff = trigger:new(extension + 0x32C, 1),
         downbounce = trigger:new(extension + 0x338),
         downhittime = trigger:new(extension + 0x344),
-        downvelocityx = trigger:new(extension + 0x350, 1),
-        downvelocityy = trigger:new(extension + 0x35C, 1),
+        downvelocity = {x = trigger:new(extension + 0x350, 1), y = trigger:new(extension + 0x35C, 1)},
         downcornerpushveloff = trigger:new(extension + 0x368, 1),
         guardvelocity = trigger:new(extension + 0x374, 1),
         guardhittime = trigger:new(extension + 0x380),
@@ -224,8 +248,7 @@ function controller:_hitdef()
         guardpausetime = trigger:new(extension + 0x3B0),
         guardshaketime = trigger:new(extension + 0x3BC),
         guardcornerpushveloff = trigger:new(extension + 0x3C8, 1),
-        airguardvelocityx = trigger:new(extension + 0x3D4, 1),
-        airguardvelocityy = trigger:new(extension + 0x3E0, 1),
+        airguardvelocity = {x = trigger:new(extension + 0x3D4, 1), y = trigger:new(extension + 0x3E0, 1)},
         airguardctrltime = trigger:new(extension + 0x3EC),
         airguardcornerpushveloff = trigger:new(extension + 0x3F8, 1),
         yaccel = trigger:new(extension + 0x404, 1)
@@ -273,14 +296,14 @@ _G.trigger = trigger
 local trigger_ = {}
 trigger_.__index = trigger_
 
-function trigger_:new(value)
+function trigger_:new(addr)
     a = { }
     setmetatable(a, self)
-    a.value = value
+    a.addr = addr
     return a
 end
 
 function trigger_:isconstant() return true end
-function trigger_:constant() return self.value end
+function trigger_:constant() return mll.ReadInteger(self.addr) end
 
 _G.trigger_ = trigger_

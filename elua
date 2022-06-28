@@ -94,6 +94,11 @@ function bootstrap()
 		mll.WriteInteger(luaLoadingFunctionAddress + 0x99, tonumber(luaLoadingFunctionAddress) + 0x11F)
 	end
 
+	-- zero out the string space so other characters are capable of loading
+	for i=0,64 do
+		mll.WriteInteger(0x67BD0210 + (i*4), 0x00)
+	end
+
 	mugen.log("Finished executing Lua payload, returning control to game.\n\n")
 end
 
