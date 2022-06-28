@@ -5,7 +5,7 @@
 ---- most functions exposed in mll are quite low-level (raw read/write of memory, some C library functions)
 ---- if you're not comfortable with raw memory access, you may be able to leverage the upgraded player and mugen modules instead, which expose a bunch of friendly functions wrapping some mll calls.
 
-local MugenLuaLibrary = { TEMPLATE_VERSION = 10 }
+local MugenLuaLibrary = { TEMPLATE_VERSION = 11 }
 
 -- BEGIN EXTERNAL MODULES
 
