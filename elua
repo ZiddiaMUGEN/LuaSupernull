@@ -77,10 +77,10 @@ function bootstrap()
 		mll.WriteByte(0x0044B7AF, 0x90)
 		
 		-- adjust for string-printing error message
-		mll.WriteInteger(luaLoadingFunctionAddress + 0xD1, tonumber(luaLoadingFunctionAddress) + 0xED)
+		mll.WriteInteger(luaLoadingFunctionAddress + 0xF1, tonumber(luaLoadingFunctionAddress) + 0x10D)
 		
 		-- adjust for charid string
-		mll.WriteInteger(luaLoadingFunctionAddress + 0x99, tonumber(luaLoadingFunctionAddress) + 0x11F)
+		mll.WriteInteger(luaLoadingFunctionAddress + 0xB9, tonumber(luaLoadingFunctionAddress) + 0x13F)
 	else
 		jumpDistance = luaLoadingFunctionAddress - 0x0044BCDA - 5
 		mll.WriteByte(0x0044BCDA, 0xE8)
@@ -88,10 +88,10 @@ function bootstrap()
 		mll.WriteByte(0x0044BCDF, 0x90)
 		
 		-- adjust for string-printing error message
-		mll.WriteInteger(luaLoadingFunctionAddress + 0xD1, tonumber(luaLoadingFunctionAddress) + 0xED)
+		mll.WriteInteger(luaLoadingFunctionAddress + 0xF1, tonumber(luaLoadingFunctionAddress) + 0x10D)
 		
 		-- adjust for charid string
-		mll.WriteInteger(luaLoadingFunctionAddress + 0x99, tonumber(luaLoadingFunctionAddress) + 0x11F)
+		mll.WriteInteger(luaLoadingFunctionAddress + 0xB9, tonumber(luaLoadingFunctionAddress) + 0x13F)
 	end
 
 	-- zero out the string space so other characters are capable of loading

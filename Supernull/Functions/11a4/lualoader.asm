@@ -17,8 +17,25 @@ jne .nolua
 cmp byte [eax+4],0x20
 jne .nolua
 
-;; fetch the character folder string
+;; check if the player has been custom stated
+;; read the stateowner index, which will be -1 if not custom stated
+mov ecx, dword [ebp + 0xCB8]
+cmp ecx, -1
+je .not_custom_stated
+;; read the info pointer of the state owner
+mov edx, dword [0x5040E8]
+lea edx, dword [edx + 0x12274 + ecx * 0x04]
+mov edx, dword [edx]
+mov ecx, dword [edx]
+push ecx
+jmp .read_folder
+
+.not_custom_stated:
+push dword [ebp]
 mov ecx, dword [ebp]
+
+.read_folder:
+;; fetch the character folder string
 mov ecx, dword [ecx+0xB0]
 xor esi,esi
 ;; copy the input string to the character folder string
@@ -45,7 +62,7 @@ jmp .loopcopy
 .loopcopydone:
 mov byte [ecx], 0x00
 ;; call the file loading function
-mov ecx, dword [ebp]
+pop ecx
 mov ecx, dword [ecx+0xB0]
 push ecx
 mov ecx,dword [0x005040FC]
