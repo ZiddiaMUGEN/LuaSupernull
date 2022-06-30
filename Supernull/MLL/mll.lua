@@ -5,7 +5,7 @@
 ---- most functions exposed in mll are quite low-level (raw read/write of memory, some C library functions)
 ---- if you're not comfortable with raw memory access, you may be able to leverage the upgraded player and mugen modules instead, which expose a bunch of friendly functions wrapping some mll calls.
 
-local MugenLuaLibrary = { TEMPLATE_VERSION = 11 }
+local MugenLuaLibrary = { TEMPLATE_VERSION = 12 }
 
 -- BEGIN EXTERNAL MODULES
 
@@ -61,15 +61,14 @@ local MugenLuaLibrary = { TEMPLATE_VERSION = 11 }
 function MugenLuaLibrary.LoadBaseLibraries(basefolder, lualib, ffilib)
 	-- attempting to re-import the libraries seems to be OK, but redoing the `ffi.cdef` is a no-no
 	if ffi ~= nil then
-		mugen.log("FFI is already loaded, skipping LoadBaseLibraries step.\n")
-		return
+		mugen.log("FFI is already loaded, skipping DLL loading step.\n")
+	else
+		mugen.log("Loading exploit libraries " .. lualib .. " and " .. ffilib .. " from " .. basefolder .. '...\n')
+
+		-- load the libraries based on input - this will load the appropriate Lua for Windows runtime, as well as the FFI library to enable execution of C functions from Lua.
+		package.loadlib(basefolder .. lualib, "*")
+		_G.ffi = package.loadlib(basefolder .. ffilib, "luaopen_ffi")()
 	end
-
-	mugen.log("Loading exploit libraries " .. lualib .. " and " .. ffilib .. " from " .. basefolder .. '...\n')
-
-	-- load the libraries based on input - this will load the appropriate Lua for Windows runtime, as well as the FFI library to enable execution of C functions from Lua.
-	package.loadlib(basefolder .. lualib, "*")
-	_G.ffi = package.loadlib(basefolder .. ffilib, "luaopen_ffi")()
 
 	ffi.cdef[[
 	typedef void* LPVOID;
@@ -79,13 +78,19 @@ function MugenLuaLibrary.LoadBaseLibraries(basefolder, lualib, ffilib)
 	typedef void* PVOID;
 	typedef PVOID HANDLE;
 	typedef int BOOL;
+	typedef HANDLE HINSTANCE;
+	typedef HINSTANCE HMODULE;
 
+	typedef int* FARPROC;
 	typedef const char* LPCSTR;
 
 	BOOL VirtualProtect(LPVOID lpAddress, size_t dwSize, DWORD flNewProtect, PDWORD lpflOldProtect);
 	LPVOID VirtualAlloc(LPVOID lpAddress, size_t dwSize, DWORD flAllocationType, DWORD flProtect);
 	HANDLE CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, void *lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
 	BOOL ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, void *lpOverlapped);
+
+	HMODULE GetModuleHandleA(LPCSTR lpModuleName);
+	FARPROC GetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 	]]
 	
 	mugen.log("Successfully loaded exploit libraries and registered C function definitions.\n\n")
