@@ -20,7 +20,7 @@ For some examples of this method in use (along with extensive use of the Lua lib
 
 Beyond just the supernull steps, part of the goal for this project was to provide an interface for working through Lua, rather than Assembly or variable-based memory editing. This makes the Supernull concept more accessible and easier to drop into an existing character (it's much easier to just pick up Lua and write `player.current():displaynameset("NewName")` than to learn Assembly and mess with the MUGEN memory layout!).
 
-To this end, this repository provides a small Assembly stub which patches DisplayToClipboard to allow Lua execution through your CNS code. In addition, Elecbyte has already provide a (mostly read-only) interface for players as part of the base Lua engine, but we are able to wrap and extend this to provide a much more full-featured library of functions.
+To this end, this repository provides a small Assembly stub which patches the game to allow Lua execution through your CNS code. In addition, Elecbyte has already provide a (mostly read-only) interface for players as part of the base Lua engine, but we are able to wrap and extend this to provide a much more full-featured library of functions.
 
 # Installation
 
@@ -37,7 +37,23 @@ Once you've completed these steps, your character should be equipped with the su
 
 # Executing Lua
 
-To execute a Lua file from your character, you can use DisplayToClipboard functionality. The template patches DisplayToClipboard to interpret any text starting with `!lua ` as a path to a Lua file to be run. As an example, to run the Lua file `Examples/LuaSamples/FreezeCharacters.lua` from this repository, you would include the below DisplayToClipboard state controller:
+To execute a Lua file from your character, you can use either custom state controllers, or DisplayToClipboard functionality. 
+
+The template provides two custom state controllers which can be used to execute Lua, either individual lines, or external files (relative to the character's folder).
+
+```ini
+[State -2, Execute One Line]
+type = LuaExec
+trigger1 = 1 ;; or your trigger here...
+lua = "player.current():lifeset(player.current():lifemax())"
+
+[State -2, Execute File]
+type = LuaFile
+trigger1 = 1 ;; or your trigger here...
+lua = "Examples/LuaSamples/FreezeCharacters.lua"
+```
+
+The template also patches DisplayToClipboard to interpret any text starting with `!lua ` as a path to a Lua file to be run. (This was initially included as it was easier to implement + is retained for compatibility). As an example, to run the Lua file `Examples/LuaSamples/FreezeCharacters.lua` from this repository, you would include the below DisplayToClipboard state controller:
 
 ```ini
 [State -2, Execute Lua]
