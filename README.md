@@ -27,11 +27,11 @@ To this end, this repository provides a small Assembly stub which patches the ga
 To install this package into your character, run through the following steps:
 
 1. Place the `elua` file in the character's root directory (same folder which contains the `.def` file). This file MUST be in the same location as the `.def` or the exploit will fail and your character will crash.
-2. Place the `supernull.st` file somewhere in the character folder. The rest of these steps will assume it's in the same folder as the `.def` file, and that you have not renamed the file (however, unlike for `elua`, you are free to do either of these and adjust accordingly).
-3. Update the `.def` file under `[Files]` section, and set `st = supernull.st`. The `supernull.st` file MUST be set in `st` (and not e.g. `st0`, `st1`, ..., `st9`) as the payload is specifically designed for it.
-4. Drop the `Supernull` folder (and all its contents) into your character folder. By default, the `elua` script expects it to be in the same folder as the `.def` file.
+2. Place the `supernull.st` file somewhere in the character folder. The rest of these steps will assume it's in the same folder as the `.def` file, and that you have not renamed the file.
+3. Update `[Files]` section inside the `.def` file, and set `st = supernull.st`. The `supernull.st` file MUST be set in `st` (and not e.g. `st0`, `st1`, ..., `st9`) as the payload is specifically designed for it.
+4. Place the `Supernull` folder (and all its contents) into your character folder. By default, the `elua` script expects it to be in the same folder as the `.def` file.
 
-Note that if you opted to move the Supernull folder to a different location, you must update the configuration options at the top of the `elua` file accordingly. I recommend just leaving it in the default location for simplicity.
+There is configuration options at the top of the `elua` file which you can make use of if you rename or move any components in the Supernull folder from the default locations. I recommend just leaving it as-is to avoid complications.
 
 Once you've completed these steps, your character should be equipped with the supernull payload and ready to be used. You can test it out and see whether it crashes to validate the installation was successful. In the event of a crash, some output should be dumped into `mugen.log` with details.
 
