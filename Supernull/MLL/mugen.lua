@@ -7,6 +7,15 @@ function mugen.getbaseaddress()
 	return mll.ReadInteger(0x5040E8)
 end
 
+function mugen.helpermax() return mll.ReadInteger(mugen.getbaseaddress() + 0x12168) end
+function mugen.helperexist()
+	local count = 0
+	for p in player.player_iter() do
+		if p:ishelper() then count = count + 1 end
+	end
+	return count
+end
+
 function mugen.gametimeset(value) mll.WriteInteger(mugen.getbaseaddress() + 0x11E98, value) end
 function mugen.roundnoset(value) mll.WriteInteger(mugen.getbaseaddress() + 0x12728, value) end
 function mugen.roundstateset(value) mll.WriteInteger(mugen.getbaseaddress() + 0x12754, value) end

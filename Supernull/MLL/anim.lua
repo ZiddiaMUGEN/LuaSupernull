@@ -64,7 +64,7 @@ function anim:loop() return {frame = mll.ReadInteger(self.dataaddr + 0x0C), elem
 -- fetch element at index
 function anim:element(idx)
     if idx >= self:elementcount() then return nil end
-    return element:new(self:elemdatalist() + 0x8C * idx)
+    return element:new(self:elemdatalist() + 0x8C * idx, idx)
 end
 
 -- iterator over elements
@@ -81,10 +81,11 @@ _G.anim = anim
 local element = {}
 element.__index = element
 
-function element:new(data)
+function element:new(data, idx)
     a = { }
     setmetatable(a, self)
     a.dataaddr = data
+    a.index = idx
     return a
 end
 
@@ -92,6 +93,7 @@ function element:clsn1data() return mll.ReadInteger(self.dataaddr + 0x84) end
 function element:clsn2data() return mll.ReadInteger(self.dataaddr + 0x88) end
 
 function element:length() return mll.ReadInteger(self.dataaddr + 0x04) end
+function element:start() return mll.ReadInteger(self.dataaddr + 0x00) end
 function element:hasclsn1() return self:clsn1data() ~= 0 end
 function element:hasclsn2() return self:clsn2data() ~= 0 end
 function element:clsn1count() 

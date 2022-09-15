@@ -83,6 +83,7 @@ end
 	end
 
 	-- re-wrap functions which take arguments and/or don't return, since auto-wrap with a return produces garbage for that
+	function player:animno() return self.wrapped:anim() end
 	function player:animelemno(t) return self.wrapped:animelemno(t) end
 	function player:animelemtime(t) return self.wrapped:animelemtime(t) end
 	function player:animexist(animno) return self.wrapped:animexist(animno) end
@@ -148,6 +149,14 @@ end
 		return manager:iterator()
 	end
 
+	function player:animelemat(i)
+		local a = self:anim(self:animno())
+		for e in a:elements() do
+			if e:start() <= i and (e:start() + e:length()) >= i then return e.index end
+		end
+		return -1
+	end
+
 	function player:state(stateno)
 		local manager = statemanager:new(self)
 		return manager:statefromid(stateno)
@@ -200,7 +209,7 @@ end
 		return player.getplayer(ownerIndex)
 	end
 	-- returns the `n`th enemy as a player (or `nil` if there is no enemy)
-	-- if `n` is ommitted returns the first enemy
+	-- if `n` is omitted returns the first enemy
 	function player:enemy(n)
 		local idx = n or 0
 		local c = -1
@@ -211,6 +220,21 @@ end
 			if c == idx then return p end
 		end
 		return nil
+	end
+
+	-- returns the `n`th target as a player (or `nil` if there is no target)
+	-- if `n` is omitted returns the first target
+	function player:target(n)
+		local idx = n or 0
+
+		local targetData = mll.ReadInteger(self:getplayeraddress() + 0x2C8)
+		local numTarget = mll.ReadInteger(targetData + 0x08)
+		if idx > numTarget then return nil end
+
+		local targetList = mll.ReadInteger(targetData + 0x18)
+		local targetAddr = mll.ReadInteger(targetList + 0x1C * idx)
+		local targetPlayerID = mll.ReadInteger(targetAddr + 0x04)
+		return player.playerfromid(targetPlayerID)
 	end
 
 	-- state controllers and pseudo-state controllers
