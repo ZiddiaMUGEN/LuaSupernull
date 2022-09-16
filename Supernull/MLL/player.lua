@@ -96,7 +96,10 @@ end
 	function player:powerset(value) self.wrapped:powerset(value) end
 	function player:aienableset(value) self.wrapped:aienableset(value) end
 	function player:numhelper(id) return self.wrapped:numhelper(id) end
-	function player:numexplod(id) return self.wrapped:numexplod(id) end
+	function player:numexplod(id) 
+		if id == nil then id = -1 end
+		return self.wrapped:numexplod(id) 
+	end
 	function player:var(idx) return self.wrapped:var(idx) end
 	function player:fvar(idx) return self.wrapped:fvar(idx) end
 	function player:sysvar(idx) return self.wrapped:sysvar(idx) end
