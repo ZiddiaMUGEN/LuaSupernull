@@ -96,6 +96,14 @@ The `mugen` module exposes some basic functionality for working with MUGEN. A po
 
 `mugen.explodmax()` - Returns the ExplodMax value defined in mugen.cfg.
 
+`mugen.stagename()` - Returns the `name` parameter for the stage.
+
+`mugen.stagedisplayname()` - Returns the `displayname` parameter for the stage.
+
+`mugen.stageauthorname()` - Returns the `authorname` parameter for the stage.
+
+`mugen.stagefile()` - Returns the relative path to the stage DEF file.
+
 ## Unknown or Unconfirmed
 
 `mugen.winningteam()` - Presumed to return the team which won the current round, but unconfirmed. Returned `0` in my tests.
@@ -565,6 +573,14 @@ animmanager submodule is used internally to help read and identify animations. I
 `animmanager:iterator()` - returns an iterator over all of the player's animations. 
 
 `animmanager:animfromid(i)` - returns the `anim` object whose action number matches `i`.
+
+# Music Module
+
+Music module provides an interface for working with the sound libraries used by MUGEN.
+
+`music.StopSound(i)` - Stops the sound playing on channel `i`.
+
+`music.StopAllSounds()` - Stops sounds playing on all channels.
 
 # MLL Module
 

@@ -5,7 +5,7 @@
 ---- most functions exposed in mll are quite low-level (raw read/write of memory, some C library functions)
 ---- if you're not comfortable with raw memory access, you may be able to leverage the upgraded player and mugen modules instead, which expose a bunch of friendly functions wrapping some mll calls.
 
-local MugenLuaLibrary = { TEMPLATE_VERSION = 14 }
+local MugenLuaLibrary = { TEMPLATE_VERSION = 15 }
 
 -- BEGIN EXTERNAL MODULES
 
@@ -92,6 +92,15 @@ function MugenLuaLibrary.LoadBaseLibraries(basefolder, lualib, ffilib)
 	HMODULE GetModuleHandleA(LPCSTR lpModuleName);
 	FARPROC GetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 	]]
+
+	-- load addon modules which depend on FFI
+	
+	-- get folder containing this file
+	local sourcefile = debug.getinfo(1, "S").source
+	local sourcefolder = string.sub(sourcefile, 2, lastIndexOf(sourcefile, "/"))
+
+	-- music addon module
+	require(sourcefolder .. "addons/music")
 	
 	mugen.log("Successfully loaded exploit libraries and registered C function definitions.\n\n")
 end

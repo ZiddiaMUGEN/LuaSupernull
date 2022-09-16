@@ -33,4 +33,9 @@ function mugen.isasserttimerfreeze() return mll.ReadByte(mugen.getbaseaddress() 
 function mugen.isassertnobardisplay() return mll.ReadByte(mugen.getbaseaddress() + 0x126A4) end
 function mugen.isassertnobg() return mll.ReadByte(mugen.getbaseaddress() + 0x126A5) end
 function mugen.isassertnofg() return mll.ReadByte(mugen.getbaseaddress() + 0x126A6) end
+
+function mugen.stagename() return mll.ReadString(mugen.getbaseaddress() + 0x1AE4) end
+function mugen.stagedisplayname() return mll.ReadString(mugen.getbaseaddress() + 0x1B14) end
+function mugen.stageauthorname() return mll.ReadString(mugen.getbaseaddress() + 0x1B44) end
+function mugen.stagefile() return mll.ReadString(mugen.getbaseaddress() + 0x1B74) end
 -- END MUGEN MODULE NEW FUNCTIONALITY
