@@ -90,6 +90,12 @@ The `mugen` module exposes some basic functionality for working with MUGEN. A po
 
 `mugen.roundnoset(i)` - Sets the value of the `MatchNo` trigger.
 
+`mugen.helpermax()` - Returns the HelperMax value defined in mugen.cfg.
+
+`mugen.helperexist()` - Returns the number of helpers which currently exist.
+
+`mugen.explodmax()` - Returns the ExplodMax value defined in mugen.cfg.
+
 ## Unknown or Unconfirmed
 
 `mugen.winningteam()` - Presumed to return the team which won the current round, but unconfirmed. Returned `0` in my tests.
@@ -163,8 +169,6 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 `player:matchover()` - Returns the current value of the `MatchOver` trigger.
 
 `player:animtime()` - Returns the current value of the `AnimTime` trigger.
-
-`player:anim()` - Returns the current value of the `Anim` trigger.
 
 `player:animelemno(i)` - Returns the current value of the `AnimElemNo` trigger, given index `i`.
 
@@ -336,6 +340,8 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:time()` - Returns the value of the `Time` trigger.
 
+`player:animno()` - Returns the current value of the `Anim` trigger.
+
 `player:helpertype()` - Returns the player's helper type (e.g. 0 = Normal-type Helper). Note this value is only meaningful if `player:ishelper()` returns `true`.
 
 `player:helperid()` - Returns the player's HelperID (or zero for non-Helpers).
@@ -424,7 +430,13 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:sysfvarset(idx, value)` - Applies the effects of a VarSet state controller against the float system variable with index `idx`.
 
-`player:unitsize()` - Returns a scale factor between the player's localcoord and the screen co-ordinate system.
+`player:scalefactor()` - Returns a scale factor between the player's localcoord and the screen co-ordinate system.
+
+`player:animelemat(i)` - Return the `animation` structure representing the element at index `i`. (might be buggy?)
+
+`player:target(i)` - Returns the `player` object representing this player's target. `i` is an optional index into the target list (defaults to 0).
+
+`player:modifyexplod(t)` - Applies the effects of a ModifyExplod state controller. `t` is a table accepting named properties for the arguments applicable to a regular ModifyExplod. Supported parameters are `removetime`, `pos`, `vel`, `accel`, `scale`. All of `pos`, `vel`, `accel`, and `scale` are expected to be subtables with parameters `x` and `y`.
 
 ## Unknown or Unconfirmed
 
@@ -534,11 +546,13 @@ element submodule is used to represent a single animation element.
 
 `element:clsn2count()` - returns the number of CLSN2 boxes in the element (including default boxes).
 
-Note: for the below iterators, the parameters defining the CLSN boxes are screen co-ordinates, and may not match the values defined in the AIR file. To recover the number from the AIR file, you must divide the co-ordinates by `player:unitsize()`.
+Note: for the below iterators, the parameters defining the CLSN boxes are screen co-ordinates, and may not match the values defined in the AIR file. To recover the number from the AIR file, you must divide the co-ordinates by `player:scalefactor()`.
 
 `element:clsn1()` - returns an iterator over all CLSN1 boxes in the element. A CLSN1 box is a table defined with parameters `top`, `bottom`, `left`, and `right`.
 
 `element:clsn2()` - returns an iterator over all CLSN2 boxes in the element. A CLSN2 box is a table defined with parameters `top`, `bottom`, `left`, and `right`.
+
+`element:start()` - returns the frame on which this element starts being displayed.
 
 ## animmanager
 

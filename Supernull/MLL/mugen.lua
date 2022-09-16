@@ -7,6 +7,7 @@ function mugen.getbaseaddress()
 	return mll.ReadInteger(0x5040E8)
 end
 
+function mugen.explodmax() return mll.ReadInteger(mugen.getbaseaddress() + 0x12944) end
 function mugen.helpermax() return mll.ReadInteger(mugen.getbaseaddress() + 0x12168) end
 function mugen.helperexist()
 	local count = 0

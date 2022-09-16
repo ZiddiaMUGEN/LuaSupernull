@@ -413,6 +413,70 @@ end
 		if tab.ctrl ~= nil then self:ctrlset({ value = tab.ctrl }) end
 	end
 
+	function player:modifyexplod(tab)
+		-- requires id param in the table
+		if tab.id == nil then return end
+		-- supported params:
+		-- pos, vel, accel, scale, angle, removetime, sprpriority, ontop
+		-- maybe anim?
+
+		-- read explod list base addr
+		local explodBase = mll.ReadInteger(mll.ReadInteger(mugen.getbaseaddress() + 0x10C20))
+
+		local idx = 0
+		-- explod list entry is slightly longer in 1.1b1
+		local listOffset = 0x268
+		if mll.GetMugenVersion() == 2 then listOffset = 0x270 end
+		-- iterate
+		while idx < mugen.explodmax() do
+			local explodAddr = explodBase + (idx * listOffset)
+			-- check explod exists and explod owner ID matches
+			if mll.ReadInteger(explodAddr) ~= 0 and mll.ReadInteger(explodAddr + 0x0C) == self:id() then
+				-- check explod ID 
+				if mll.ReadInteger(explodAddr + 0x10) == tab.id then
+					-- modify the explod's properties
+					-- 0x18: pos x (double)
+					-- 0x20: pos y (double)
+					-- 0x40: vel x (double)
+					-- 0x48: vel y (double)
+					-- 0x68: accel x (double)
+					-- 0x70: accel y (double)
+					-- 0xA0: anim?
+					-- 0xA4: removetime
+					-- 0xA8: scale x (double) (localcoord-aware)
+					-- 0xB0: scale y (double) (localcoord-aware)
+					-- 0x154: existtime
+
+					if tab.removetime ~= nil then
+						mll.WriteInteger(explodAddr + 0x154, 0)
+						mll.WriteInteger(explodAddr + 0xA4, tab.removetime)
+					end
+
+					if tab.pos ~= nil then
+						if tab.pos.x ~= nil then mll.WriteDouble(explodAddr + 0x18, tab.pos.x) end
+						if tab.pos.y ~= nil then mll.WriteDouble(explodAddr + 0x20, tab.pos.y) end
+					end
+
+					if tab.vel ~= nil then
+						if tab.vel.x ~= nil then mll.WriteDouble(explodAddr + 0x40, tab.vel.x) end
+						if tab.vel.y ~= nil then mll.WriteDouble(explodAddr + 0x48, tab.vel.y) end
+					end
+
+					if tab.accel ~= nil then
+						if tab.accel.x ~= nil then mll.WriteDouble(explodAddr + 0x68, tab.accel.x) end
+						if tab.accel.y ~= nil then mll.WriteDouble(explodAddr + 0x70, tab.accel.y) end
+					end
+
+					if tab.scale ~= nil then
+						if tab.scale.x ~= nil then mll.WriteDouble(explodAddr + 0xA8, tab.scale.x / self:scalefactor()) end
+						if tab.scale.y ~= nil then mll.WriteDouble(explodAddr + 0xB0, tab.scale.y / self:scalefactor()) end
+					end
+				end
+			end
+			idx = idx + 1
+		end
+	end
+
 	-- not quite the same as TargetState. this will force the `self` player to run the state `stateno` under `stateowner`'s statefile.
 	-- `time` is an optional argument, if provided, it sets the `Time` trigger. if not provided, `Time` is reset to 0.
 	function player:forcecustomstate(stateowner, stateno, time)
@@ -428,6 +492,7 @@ end
 	end
 	
 	-- getters
+	function player:scalefactor() return self:localcoord().x / mll.ReadInteger(mugen.getbaseaddress() + 0x128A8) end
 	function player:displayname() return mll.ReadString(self:getinfoaddress() + 0x30) end
 	function player:localcoord() return {x = mll.ReadDouble(self:getinfoaddress() + 0x90), y = mll.ReadDouble(self:getinfoaddress() + 0x98)} end
 	function player:isfrozen() return mll.ReadInteger(self:getplayeraddress() + 0x1B4) end
