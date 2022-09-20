@@ -112,7 +112,22 @@ end
 
 	-- sctrl functions replicated from base, just pass the table through without validation (the base function hopefully validates...)
 	function player:velset(tab) self.wrapped:velset(tab) end
-	function player:explod(tab) self.wrapped:explod(tab) end
+	function player:explod(tab)
+		-- fixup non-Vector inputs to Vector
+		if tab.pos ~= nil and getmetatable(tab.pos) ~= Vector then
+			tab.pos = Vector:vec2(tab.pos.x or 0, tab.pos.y or 0)
+		end
+		if tab.vel ~= nil and getmetatable(tab.vel) ~= Vector then
+			tab.vel = Vector:vec2(tab.vel.x or 0, tab.vel.y or 0)
+		end
+		if tab.accel ~= nil and getmetatable(tab.accel) ~= Vector then
+			tab.accel = Vector:vec2(tab.accel.x or 0, tab.accel.y or 0)
+		end
+		if tab.scale ~= nil and getmetatable(tab.scale) ~= Vector then
+			tab.scale = Vector:numpair(tab.scale.x or 0, tab.scale.y or 0)
+		end
+		self.wrapped:explod(tab)
+	end
 	function player:changestate(tab) self.wrapped:changestate(tab) end
 	
 	-- vector returns
@@ -141,6 +156,7 @@ end
 	-- utility on object
 	function player:getplayeraddress() return self.address end
 	function player:getinfoaddress() return mll.ReadInteger(self.address) end
+	function player:getfolder() return mll.ReadString(mll.ReadInteger(self:getinfoaddress() + 0xB0)) end
 
 	function player:anim(animno)
 		local manager = animmanager:new(self)
@@ -478,6 +494,41 @@ end
 			end
 			idx = idx + 1
 		end
+	end
+
+	-- plays music from a file on disk, path provided should be relative to the character path
+	-- options should be a table with any of the following options:
+	---- loops - specifies how many times to loop the music. specify -1 to loop indefinitely. default: 0
+	---- volume - specifies volume of the file. should be a float between 0 and 1.
+	---- fade - specifies number of ms to fade in for.
+	function player:playmusic(file, options)
+		-- ensure options table is supplied
+		if options == nil then options = {} end
+
+		-- default values for options
+		if options.loops == nil then options.loops = 0 end
+
+		-- set volume if specified
+		if options.volume ~= nil then 
+			if options.volume > 1.0 then options.volume = 1.0 end
+			if options.volume < 0.0 then options.volume = 0.0 end
+			music.SetMusicVolume(math.floor(options.volume * 128)) 
+		end
+
+		-- play music
+		local folder = self:getfolder()
+		local status = false
+		if options.fade == nil then 
+			status = music.PlayMusic(folder .. "/" .. file, options.loops)
+		else
+			status = music.PlayMusicWithFadeIn(folder .. "/" .. file, options.loops, options.fade)
+		end
+
+		return status
+	end
+
+	function player:stopmusic()
+		music.StopMusic()
 	end
 
 	-- not quite the same as TargetState. this will force the `self` player to run the state `stateno` under `stateowner`'s statefile.

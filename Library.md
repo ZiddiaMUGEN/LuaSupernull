@@ -306,7 +306,7 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:changestate(t)` - Applies the effects of a ChangeState state controller. `t` is a table accepting named properties for the arguments applicable to a regular ChangeState (i.e. value, ctrl, anim).
 
-`player:explod(t)` - Applies the effects of a Explod state controller. `t` is a table accepting named properties for the arguments applicable to a regular Explod (i.e. anim, ownpal, pos, id, .....).
+`player:explod(t)` - Applies the effects of a Explod state controller. `t` is a table accepting named properties for the arguments applicable to a regular Explod (i.e. anim, ownpal, pos, id, .....). Parameters such as `pos`, `vel`, and `scale` which specify multiple subproperties can be defined either as subtables (e.g. `vel = { x = 1.0, y = 1.0 }`) or as Vector types (e.g. `vel = Vector:vec2(1.0, 1.0)`).
 
 ## New Functionality
 
@@ -339,6 +339,8 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 `player:getplayeraddress()` - Returns the base address of the player's data structure. Not recommended to use unless you're planning to work with direct memory editing.
 
 `player:getinfoaddress()` - Returns the base address of the player's info structure. Not recommended to use unless you're planning to work with direct memory editing.
+
+`player:getfolder()` - Returns the folder containing the character's DEF file, relative to mugen.exe.
 
 `player:displayname()` - Returns the player's display name, as a string.
 
@@ -444,7 +446,14 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:target(i)` - Returns the `player` object representing this player's target. `i` is an optional index into the target list (defaults to 0).
 
-`player:modifyexplod(t)` - Applies the effects of a ModifyExplod state controller. `t` is a table accepting named properties for the arguments applicable to a regular ModifyExplod. Supported parameters are `removetime`, `pos`, `vel`, `accel`, `scale`. All of `pos`, `vel`, `accel`, and `scale` are expected to be subtables with parameters `x` and `y`.
+`player:modifyexplod(t)` - Applies the effects of a ModifyExplod state controller. `t` is a table accepting named properties for the arguments applicable to a regular ModifyExplod. Supported parameters are `removetime`, `pos`, `vel`, `accel`, `scale`. Parameters such as `pos`, `vel`, and `scale` which specify multiple subproperties can be defined either as subtables (e.g. `vel = { x = 1.0, y = 1.0 }`) or as Vector types (e.g. `vel = Vector:vec2(1.0, 1.0)`).
+
+`player:playmusic(f, t)` - Plays music from a file specified by `f`, with options specified by `t`. Only one sound can be played with `playmusic` at a time. `playmusic` is distinct from the `playsnd` state controller and is used to play music from standalone files stored on disk, rather than the SND file. Supported file formats depend on installed libraries (but WAV should work consistently). `t` is a table accepting any of the following options:
+    - `loops` - the number of times to loop the music. Set to -1 to loop until stopped. Defaults to 0.
+    - `volume` - the volume factor to apply to the music, between 0.0 and 1.0. If not provided, this music will re-use the volume factor from the previously played music.
+    - `fade` - number of milliseconds to fade this music in for. If not specified, music will play at its intended maximum volume immediately.
+
+`player:stopmusic()` - Stops the currently playing music, if any music is playing.
 
 ## Unknown or Unconfirmed
 
@@ -581,6 +590,18 @@ Music module provides an interface for working with the sound libraries used by 
 `music.StopSound(i)` - Stops the sound playing on channel `i`.
 
 `music.StopAllSounds()` - Stops sounds playing on all channels.
+
+`music.SetMusicVolume(i)` - Sets the current music volume to `i`. Note volume in the sound library is an integer between 0 and 128.
+
+`music.GetMusicVolume()` - Returns the current music volume.
+
+`music.PlayMusic(f, i)` - Plays music from the file specified by `f` for `i` loops. If `i` is set to -1, the music will loop indefinitely until stopped.
+
+`music.PlayMusicWithFadeIn(f, i, ms)` - Plays music from the file specified by `f` for `i` loops. If `i` is set to -1, the music will loop indefinitely until stopped. `ms` specifies the number of milliseconds to spend fading in to the current music volume.
+
+`music.StopMusic()` - Stops the currently playing music, if any music is playing.
+
+`music.GetSDLError()` - Utility function used internally to fetch the last error returned by the backing sound library.
 
 # MLL Module
 
