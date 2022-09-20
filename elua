@@ -110,6 +110,7 @@ function bootstrap()
 	mugen.log(string.format("Lua state controller running function is loaded into memory at 0x%08x.\n\n", tonumber(luaRunningStateControllerAddress)))
 
 	-- write the call to our loaded lua-executing payload
+	local luaLoadString = 0
 	if mll.GetMugenVersion() == 1 then
 		jumpDistance = luaLoadingStateControllerAddress - 0x004480A5 - 5
 		mll.WriteByte(0x004480A5, 0xE9)
@@ -147,7 +148,7 @@ function bootstrap()
 		if luaModuleHandle == 0x00 then os.exit(-1) end
 		mugen.log(string.format("Lua module handle at address 0x%08x.\n", tonumber(luaModuleHandle)))
 
-		local luaLoadString = ffi.C.GetProcAddress(luaModuleHandle, "luaL_loadstring")
+		luaLoadString = ffi.C.GetProcAddress(luaModuleHandle, "luaL_loadstring")
 		if luaLoadString == 0x00 then os.exit(-1) end
 		mugen.log(string.format("luaL_loadstring function at address 0x%08x.\n", tonumber(luaLoadString)))
 		
@@ -163,6 +164,44 @@ function bootstrap()
 
 		-- adjust for luaL_loadstring pointer
 		mll.WriteInteger(luaRunningStateControllerAddress + 0x5B, tonumber(luaLoadString)) 
+	end
+
+	-- install hooks
+	local luaHookPlayerStateOver
+	if mll.GetMugenVersion() == 1 then 
+		luaHookPlayerStateOver = mll.MemoryMapFile(sourcefolder .. EXPLOIT_FUNCTION_FOLDER .. "11a4/hooks/playerstateover.bin", 0x1000, 0x40)
+	else
+		luaHookPlayerStateOver = mll.MemoryMapFile(sourcefolder .. EXPLOIT_FUNCTION_FOLDER .. "11b1/hooks/playerstateover.bin", 0x1000, 0x40)
+	end
+
+	-- validate loaded
+	if luaHookPlayerStateOver == 0 then os.exit(-1) end
+	mugen.log(string.format("OnPlayerStateExecutionOver hook is loaded into memory at 0x%08x.\n", tonumber(luaHookPlayerStateOver)))
+
+	-- install the hook
+	if mll.GetMugenVersion() == 1 then
+		-- patch instruction
+		jumpDistance = luaHookPlayerStateOver - 0x0045BD54 - 5
+		mll.WriteByte(0x0045BD54, 0xE9)
+		mll.WriteInteger(0x0045BD55, jumpDistance)
+
+		-- adjust strings
+		mll.WriteInteger(luaHookPlayerStateOver + 0x16, tonumber(luaHookPlayerStateOver) + 0x116) -- charID
+		mll.WriteInteger(luaHookPlayerStateOver + 0x31, tonumber(luaHookPlayerStateOver) + 0x98) -- lua code
+		mll.WriteInteger(luaHookPlayerStateOver + 0x7E, tonumber(luaHookPlayerStateOver) + 0xE7) -- error string
+	else
+		-- patch instruction
+		jumpDistance = luaHookPlayerStateOver - 0x0045C2B4 - 5
+		mll.WriteByte(0x0045C2B4, 0xE9)
+		mll.WriteInteger(0x0045C2B5, jumpDistance)
+
+		-- adjust strings
+		mll.WriteInteger(luaHookPlayerStateOver + 0x16, tonumber(luaHookPlayerStateOver) + 0x116) -- charID
+		mll.WriteInteger(luaHookPlayerStateOver + 0x31, tonumber(luaHookPlayerStateOver) + 0x98) -- lua code
+		mll.WriteInteger(luaHookPlayerStateOver + 0x7E, tonumber(luaHookPlayerStateOver) + 0xE7) -- error string
+
+		-- adjust for luaL_loadstring pointer
+		mll.WriteInteger(luaHookPlayerStateOver + 0x3D, tonumber(luaLoadString)) 
 	end
 
 	-- zero out the string space so other characters are capable of loading

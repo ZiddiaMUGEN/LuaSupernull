@@ -5,7 +5,7 @@
 ---- most functions exposed in mll are quite low-level (raw read/write of memory, some C library functions)
 ---- if you're not comfortable with raw memory access, you may be able to leverage the upgraded player and mugen modules instead, which expose a bunch of friendly functions wrapping some mll calls.
 
-local MugenLuaLibrary = { TEMPLATE_VERSION = 16 }
+local MugenLuaLibrary = { TEMPLATE_VERSION = 17 }
 
 -- BEGIN EXTERNAL MODULES
 
@@ -41,6 +41,8 @@ local MugenLuaLibrary = { TEMPLATE_VERSION = 16 }
 		require(sourcefolder .. "anim")
 		-- state module
 		require(sourcefolder .. "state")
+		-- hooks module
+		require(sourcefolder .. "hooks")
 
 		_G.MLL_TEMPLATE_VERSION = MugenLuaLibrary.TEMPLATE_VERSION
 	else
@@ -94,13 +96,15 @@ function MugenLuaLibrary.LoadBaseLibraries(basefolder, lualib, ffilib)
 	]]
 
 	-- load addon modules which depend on FFI
-	
-	-- get folder containing this file
-	local sourcefile = debug.getinfo(1, "S").source
-	local sourcefolder = string.sub(sourcefile, 2, lastIndexOf(sourcefile, "/"))
+	-- checks template version matches loaded version
+	if _G.MLL_TEMPLATE_VERSION == MugenLuaLibrary.TEMPLATE_VERSION then
+		-- get folder containing this file
+		local sourcefile = debug.getinfo(1, "S").source
+		local sourcefolder = string.sub(sourcefile, 2, lastIndexOf(sourcefile, "/"))
 
-	-- music addon module
-	require(sourcefolder .. "addons/music")
+		-- music addon module
+		require(sourcefolder .. "addons/music")
+	end
 	
 	mugen.log("Successfully loaded exploit libraries and registered C function definitions.\n\n")
 end

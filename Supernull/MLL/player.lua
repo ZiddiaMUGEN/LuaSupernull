@@ -16,6 +16,17 @@ if _G.player_ == nil then
 	local p = player
 	_G.player_ = p
 end
+
+-- https://stackoverflow.com/a/32389020
+OR, XOR, AND = 1, 3, 4
+function bitoper(a, b, oper)
+	local r, m, s = 0, 2^31
+	repeat
+	   s,a,b = a+b+m, a%m, b%m
+	   r,m = r + m*oper%(s-a-b), m/2
+	until m < 1
+	return r
+ end
  
 -- BEGIN PLAYER MODULE WRAPPER
 	local player = { }
@@ -127,6 +138,55 @@ end
 			tab.scale = Vector:numpair(tab.scale.x or 0, tab.scale.y or 0)
 		end
 		self.wrapped:explod(tab)
+
+		-- support facing+vfacing (not supported in the Elecbyte implementation)
+		-- [explod addr]+0x114 is a bitflag for horizontal and vertical flips.
+		-- 01b = flip horizontally
+		-- 10b = flip vertically
+		-- 11b = flip both (of course)
+		-- whether the flag is set or unset depends both on the owner's facing and on the explod's facing params.
+		-- i add flag 100b to determine if an explod was already processed (as we aren't returned the addr from the wrapped func)
+
+		-- read explod params
+		local facing = tab.facing or 1
+		local vfacing = tab.vfacing or 1
+		local bitflag = 4 -- defaults 4 to help flag if an explod was processed by this code...
+
+		-- compute bitflag
+		if facing ~= self:facing() then bitflag = bitflag + 1 end
+		if vfacing == -1 then bitflag = bitflag + 2 end
+		
+		-- handle undefined ID
+		tab.id = tab.id or 0
+		
+		-- get explod addr by iterating explods and finding the one with the right ID, 0f existence, and not processed by us.
+		-- this is pretty messy but probably no better method as MUGEN doesn't pass back the real explod addr.
+		local explodBase = mll.ReadInteger(mll.ReadInteger(mugen.getbaseaddress() + 0x10C20))
+
+		local idx = 0
+		-- explod list entry is slightly longer in 1.1b1
+		local listOffset = 0x268
+		local bitflagOffset = 0x114
+		if mll.GetMugenVersion() == 2 then 
+			listOffset = 0x270
+			bitflagOffset = 0x118
+		end
+		-- iterate
+		while idx < mugen.explodmax() do
+			local explodAddr = explodBase + (idx * listOffset)
+			-- check explod exists and explod owner ID matches
+			if mll.ReadInteger(explodAddr) ~= 0 and mll.ReadInteger(explodAddr + 0x0C) == self:id() then
+				-- check explod ID 
+				if mll.ReadInteger(explodAddr + 0x10) == tab.id and mll.ReadInteger(explodAddr + 0x154) == 0 then
+					-- use a flag to avoid updating facing on this explod again (this is a hack...)
+					if mll.ReadInteger(explodAddr + bitflagOffset) <= 3 then
+						mll.WriteInteger(explodAddr + bitflagOffset, bitflag)
+						break
+					end
+				end
+			end
+			idx = idx + 1
+		end
 	end
 	function player:changestate(tab) self.wrapped:changestate(tab) end
 	
@@ -152,6 +212,18 @@ end
 	-- utility on module
 	function player.playerfromid(id) return player.getplayer(player.indexfromid(id)) end
 	function player.current() return player.playerfromid(CurrCharacterID) end
+
+	-- hooks
+	function player:SetHook(h, f, p)
+		-- validate hook can be placed
+		if h < hooks.MIN_LISTENER or h > hooks.MAX_LISTENER then return false end
+		-- default params
+		if p == nil then p = {} end
+		-- add target param
+		p.target = self
+		-- set the hook
+		hooks.SetHook(h, f, p, false)
+	end
 	
 	-- utility on object
 	function player:getplayeraddress() return self.address end
@@ -445,7 +517,11 @@ end
 		local idx = 0
 		-- explod list entry is slightly longer in 1.1b1
 		local listOffset = 0x268
-		if mll.GetMugenVersion() == 2 then listOffset = 0x270 end
+		local bitflagOffset = 0x114
+		if mll.GetMugenVersion() == 2 then 
+			listOffset = 0x270
+			bitflagOffset = 0x118
+		end
 		-- iterate
 		while idx < mugen.explodmax() do
 			local explodAddr = explodBase + (idx * listOffset)
@@ -490,6 +566,24 @@ end
 						if tab.scale.x ~= nil then mll.WriteDouble(explodAddr + 0xA8, tab.scale.x / self:scalefactor()) end
 						if tab.scale.y ~= nil then mll.WriteDouble(explodAddr + 0xB0, tab.scale.y / self:scalefactor()) end
 					end
+
+					-- compute bitflag for facings
+					local bitflag = mll.ReadInteger(explodAddr + bitflagOffset)
+
+					if tab.vfacing ~= nil then
+						if tab.vfacing == -1 then bitflag = bitoper(bitflag, 2, OR) end
+					end
+
+					if tab.facing ~= nil then
+						if tab.facing ~= self:facing() then 
+							bitflag = bitoper(bitflag, 1, OR)
+						elseif bitoper(bitflag, 1, AND) == 1 then
+							bitflag = bitflag - 1
+						end
+					end
+
+					bitflag = bitoper(bitflag, 4, OR)
+					mll.WriteInteger(explodAddr + bitflagOffset, bitflag)
 				end
 			end
 			idx = idx + 1

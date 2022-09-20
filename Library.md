@@ -446,7 +446,7 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:target(i)` - Returns the `player` object representing this player's target. `i` is an optional index into the target list (defaults to 0).
 
-`player:modifyexplod(t)` - Applies the effects of a ModifyExplod state controller. `t` is a table accepting named properties for the arguments applicable to a regular ModifyExplod. Supported parameters are `removetime`, `pos`, `vel`, `accel`, `scale`. Parameters such as `pos`, `vel`, and `scale` which specify multiple subproperties can be defined either as subtables (e.g. `vel = { x = 1.0, y = 1.0 }`) or as Vector types (e.g. `vel = Vector:vec2(1.0, 1.0)`).
+`player:modifyexplod(t)` - Applies the effects of a ModifyExplod state controller. `t` is a table accepting named properties for the arguments applicable to a regular ModifyExplod. Supported parameters are `removetime`, `pos`, `vel`, `accel`, `scale`, `facing`, `vfacing`. Parameters such as `pos`, `vel`, and `scale` which specify multiple subproperties can be defined either as subtables (e.g. `vel = { x = 1.0, y = 1.0 }`) or as Vector types (e.g. `vel = Vector:vec2(1.0, 1.0)`).
 
 `player:playmusic(f, t)` - Plays music from a file specified by `f`, with options specified by `t`. Only one sound can be played with `playmusic` at a time. `playmusic` is distinct from the `playsnd` state controller and is used to play music from standalone files stored on disk, rather than the SND file. Supported file formats depend on installed libraries (but WAV should work consistently). `t` is a table accepting any of the following options:
     - `loops` - the number of times to loop the music. Set to -1 to loop until stopped. Defaults to 0.
@@ -602,6 +602,10 @@ Music module provides an interface for working with the sound libraries used by 
 `music.StopMusic()` - Stops the currently playing music, if any music is playing.
 
 `music.GetSDLError()` - Utility function used internally to fetch the last error returned by the backing sound library.
+
+# Hooks Module
+
+Documentation around Hooks (an event system for MUGEN) is separated into `Hooks.md` as I anticipate it being a fairly large subsystem.
 
 # MLL Module
 
