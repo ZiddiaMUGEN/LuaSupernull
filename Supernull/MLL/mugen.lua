@@ -22,6 +22,51 @@ function mugen.roundnoset(value) mll.WriteInteger(mugen.getbaseaddress() + 0x127
 function mugen.roundstateset(value) mll.WriteInteger(mugen.getbaseaddress() + 0x12754, value) end
 function mugen.matchnoset(value) mll.WriteInteger(mugen.getbaseaddress() + 0x12824, value) end
 
+function mugen.winset(value, wintype, winperfect)
+	-- possible wintype values: 0 = win by normal, 1 = win by special, 2 = win by hyper, 3 = win by cheese, 4 = timeup, 5 = win by throw, 6 = win by suicide, 7 = killed by teammate
+	-- invalid teams
+	if value ~= 1 and value ~= 2 then return end
+	-- default wintype
+	if wintype == nil then wintype = 0 end
+	-- default winperfect
+	if winperfect == nil then winperfect = false end
+
+	-- write winning team
+	mll.WriteInteger(mugen.getbaseaddress() + 0x12758, value)
+	mll.WriteInteger(mugen.getbaseaddress() + 0x1275C, 1)
+
+	-- update wintype for rendering
+	mugen.wintypeset(mugen.wincount(value) + 1, value, wintype)
+	-- update winperfect for rendering
+	mugen.winperfectset(mugen.wincount(value) + 1, value, winperfect)
+end
+
+function mugen.wintypeset(round, team, value)
+	if round < 1 or round > 10 then return end
+	-- determine offset based on team and round input
+	local offset = mugen.getbaseaddress() + 0x12778 + (round - 1) * 4
+	if team == 2 then
+		offset = offset + 0x28
+	end
+
+	mll.WriteInteger(offset, value)
+end
+
+function mugen.winperfectset(round, team, value)
+	if round < 1 or round > 10 then return end
+	-- determine offset based on team and round input
+	local offset = mugen.getbaseaddress() + 0x127C8 + (round - 1) * 4
+	if team == 2 then
+		offset = offset + 0x28
+	end
+	-- set rendering winperfect
+	if value then
+		mll.WriteInteger(offset, 0x08)
+	else
+		mll.WriteInteger(offset, -1)
+	end
+end
+
 function mugen.isassertintro() return mll.ReadByte(mugen.getbaseaddress() + 0x1269C) end
 function mugen.isassertroundnotover() return mll.ReadByte(mugen.getbaseaddress() + 0x1269D) end
 function mugen.isassertnoko() return mll.ReadByte(mugen.getbaseaddress() + 0x1269E) end
@@ -38,4 +83,6 @@ function mugen.stagename() return mll.ReadString(mugen.getbaseaddress() + 0x1AE4
 function mugen.stagedisplayname() return mll.ReadString(mugen.getbaseaddress() + 0x1B14) end
 function mugen.stageauthorname() return mll.ReadString(mugen.getbaseaddress() + 0x1B44) end
 function mugen.stagefile() return mll.ReadString(mugen.getbaseaddress() + 0x1B74) end
+
+function mugen.wincount(team) return mll.ReadInteger(mugen.getbaseaddress() + 0x12728 + 4 * team) end
 -- END MUGEN MODULE NEW FUNCTIONALITY

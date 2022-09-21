@@ -104,6 +104,15 @@ The `mugen` module exposes some basic functionality for working with MUGEN. A po
 
 `mugen.stagefile()` - Returns the relative path to the stage DEF file.
 
+`mugen.wincount(i)` - Returns the wincount for team `i`, where `i` is either 1 or 2.
+
+`mugen.winset(i, t, p)` - Sets the win flag for team `i`, where `i` is either 1 or 2. `t` is an optional parameter determining the win type, which will determine rendering for the win icon, and defaults to 0 (win by Normal). `p` is an optional parameter determining the winperfect status, and should be set to `true` or `false`.
+    Valid values for `t` range from 0 to 7: 0 = win by normal, 1 = win by special, 2 = win by hyper, 3 = win by cheese, 4 = timeup, 5 = win by throw, 6 = win by suicide, 7 = killed by teammate
+
+`mugen.wintypeset(r, t, v)` - Sets the win type for the round specified by `r` and the team specified by `t`. `r` should be a number between 1 and 10, and `t` should be either 1 or 2. `v` is the value to set for the win type.
+
+`mugen.winperfectset(r, t, v)` - Sets the winperfect flag for the round specified by `r` and the team specified by `t`. `r` should be a number between 1 and 10, and `t` should be either 1 or 2. `v` is a boolean `true` or `false` determining the winperfect status.
+
 ## Unknown or Unconfirmed
 
 `mugen.winningteam()` - Presumed to return the team which won the current round, but unconfirmed. Returned `0` in my tests.
