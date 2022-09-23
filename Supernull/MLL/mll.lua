@@ -5,7 +5,7 @@
 ---- most functions exposed in mll are quite low-level (raw read/write of memory, some C library functions)
 ---- if you're not comfortable with raw memory access, you may be able to leverage the upgraded player and mugen modules instead, which expose a bunch of friendly functions wrapping some mll calls.
 
-local MugenLuaLibrary = { TEMPLATE_VERSION = 18 }
+local MugenLuaLibrary = { TEMPLATE_VERSION = 19 }
 
 -- BEGIN EXTERNAL MODULES
 
@@ -43,6 +43,8 @@ local MugenLuaLibrary = { TEMPLATE_VERSION = 18 }
 		require(sourcefolder .. "state")
 		-- hooks module
 		require(sourcefolder .. "hooks")
+		-- explod module
+		require(sourcefolder .. "explod")
 
 		_G.MLL_TEMPLATE_VERSION = MugenLuaLibrary.TEMPLATE_VERSION
 	else
@@ -57,6 +59,21 @@ local MugenLuaLibrary = { TEMPLATE_VERSION = 18 }
 	local GENERIC_READ = -2147483648
 	local FILE_SHARE_READ = 0x01
 -- END CONSTANTS
+
+-- helper function for converting int to boolean
+-- ints are used as booleans in MUGEN CNS so we match behaviour here
+-- 0 = false, non-0 = true
+-- non-number = return itself
+function int2bool(i) 
+	if type(i) ~= "number" then return i end
+	return i ~= 0 
+end
+function bool2int(b) 
+	if type(b) ~= "boolean" then return b end
+	if b then return 1 else return 0 end
+end
+_G.int2bool = int2bool
+_G.bool2int = bool2int
 
 -- loads + initializes the base libraries (lua5.1 and ffi) which are required for exploit to succeed.
 -- this also includes the initial cdef which loads Windows API functions through ffi.

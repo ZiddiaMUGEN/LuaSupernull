@@ -351,6 +351,10 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 
 `player:getfolder()` - Returns the folder containing the character's DEF file, relative to mugen.exe.
 
+`player:getexplod(id)` - Returns an `explod` object representing the first explod with ID `id`.
+
+`player:getexplods(id)` - Returns an iterator over `explod` objects with ID `id`. If `id` is not provided this will return an iterator over every `explod` owner by this player.
+
 `player:displayname()` - Returns the player's display name, as a string.
 
 `player:isfrozen()` - Returns the player's frozen status, as an integer (1 or 0).
@@ -481,6 +485,108 @@ A note on syntax: as with Lua, I use the colon operator `:` here to indicate a f
 `player:parentdist()` - Easy to guess the purpose, but I didn't have a test character using Helpers handy. (We can probably assume this follows the convention set by `vel`, `pos`, etc. with a table being returned).
 
 `player:rootdist()` - Same as `player:parentdist()`
+
+# Explod Module
+
+Explod module provides a way to work with explods owned by a given player. In order to reference an explod object, you should use `player:getexplod` or `player:getexplods`.
+
+`explod:exists()` - Returns a boolean representing whether the explod is active or not.
+
+`explod:id()` - ID property of the explod.
+
+`explod:idset(i)` - Sets the ID property to `i`.
+
+`explod:pos()` - pos property of the explod. Returns a subtable with `x` and `y` properties.
+
+`explod:posset(t)` - Sets the random property. Input is a subtable with `x` and `y` properties.
+
+`explod:vel()` - vel property of the explod. Returns a subtable with `x` and `y` properties.
+
+`explod:velset(t)` - Sets the vel property. Input is a subtable with `x` and `y` properties.
+
+`explod:accel()` - accel property of the explod. Returns a subtable with `x` and `y` properties.
+
+`explod:accelset(t)` - Sets the accel property. Input is a subtable with `x` and `y` properties.
+
+`explod:sprpriority()` - sprpriority property of the explod.
+
+`explod:sprpriorityset(i)` - Sets the sprpriority property to `i`.
+
+`explod:random()` - random property of the explod. Returns a subtable with `x` and `y` properties.
+
+`explod:randomset(t)` - Sets the random property. Input is a subtable with `x` and `y` properties.
+
+`explod:pausemovetime()` - pausemovetime property of the explod.
+
+`explod:pausemovetimeset(i)` - Sets the pausemovetime property to `i`.
+
+`explod:supermovetime()` - supermovetime property of the explod.
+
+`explod:supermovetimeset(i)` - Sets the supermovetime property to `i`.
+
+`explod:removetime()` - removetime property of the explod.
+
+`explod:removetimeset(i)` - Sets the removetime property to `i`.
+
+`explod:scale()` - scale property of the explod. Returns a subtable with `x` and `y` properties.
+
+`explod:scaleset(t)` - Sets the scale property. Input is a subtable with `x` and `y` properties.
+
+`explod:angle()` - angle property of the explod.
+
+`explod:angleset(d)` - Sets the angle property to `d`.
+
+`explod:xangle()` - xangle property of the explod.
+
+`explod:xangleset(d)` - Sets the xangle property to `d`.
+
+`explod:yangle()` - yangle property of the explod.
+
+`explod:yangleset(d)` - Sets the yangle property to `d`.
+
+`explod:bindtime()` - bindtime property of the explod.
+
+`explod:bindtimeset(i)` - Sets the bindtime property to `i`.
+
+`explod:postype()` - postype property of the explod as an integer.
+
+`explod:postypeset(i)` - Sets the postype property to `i`.
+
+`explod:ontop()` - ontop property of the explod as an integer.
+
+`explod:ontopset(i)` - Sets the ontop property to `i`.
+
+`explod:facing()` - facing property of the explod.
+
+`explod:facingset(i)` - Sets the facing property to `i`.
+
+`explod:vfacing()` - vfacing property of the explod.
+
+`explod:vfacingset(i)` - Sets the vfacing property to `i`.
+
+`explod:space()` - space property of the explod as an integer.
+
+`explod:spaceset(i)` - Sets the space property to `i`.
+
+`explod:shadow()` - shadow property of the explod.
+
+`explod:shadowset(i)` - Sets the shadow property to `i`.
+
+`explod:removeongethit()` - removeongethit property of the explod.
+
+`explod:removeongethitset(i)` - Sets the removeongethit property to `i`.
+
+`explod:ignorehitpause()` - ignorehitpause property of the explod.
+
+`explod:ignorehitpauseset(i)` - Sets the ignorehitpause property to `i`.
+
+`explod:trans()` - trans property of the explod as an integer.
+
+`explod:transset(i)` - Sets the trans property to `i`.
+
+`explod:alpha()` - alpha property of the explod. Returns a subtable with `src` and `dst` properties.
+
+`explod:alphaset(t)` - Sets the alpha property. Input is a subtable with `src` and `dst` properties.
 
 # State Module
 

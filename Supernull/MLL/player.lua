@@ -86,7 +86,10 @@ function bitoper(a, b, oper)
 	function player.indexfromid(id) return player_.indexfromid(id) end
 	function player.indexisvalid(id) return player_.indexisvalid(id) end
 	function player.enabled(idx) return player_.enabled(idx) end
-	function player.enableset(idx, b) return player_.enableset(idx, b) end
+	function player.enableset(idx, b) 
+		b = int2bool(b)
+		return player_.enableset(idx, b) 
+	end
 
 	--- auto-wrap the getter functions since they're simple to wrap
 	for _,func in pairs(player.interface_functions) do
@@ -105,7 +108,10 @@ function bitoper(a, b, oper)
 	function player:projcontacttime(idx) return self.wrapped:projcontacttime(idx) end
 	function player:lifeset(value) self.wrapped:lifeset(value) end
 	function player:powerset(value) self.wrapped:powerset(value) end
-	function player:aienableset(value) self.wrapped:aienableset(value) end
+	function player:aienableset(value) 
+		value = int2bool(value)
+		self.wrapped:aienableset(value) 
+	end
 	function player:numhelper(id) return self.wrapped:numhelper(id) end
 	function player:numexplod(id) 
 		if id == nil then id = -1 end
@@ -124,6 +130,12 @@ function bitoper(a, b, oper)
 	-- sctrl functions replicated from base, just pass the table through without validation (the base function hopefully validates...)
 	function player:velset(tab) self.wrapped:velset(tab) end
 	function player:explod(tab)
+		-- fixup boolean inputs
+		if tab.usefightfx ~= nil then tab.usefightfx = int2bool(tab.usefightfx) end
+		if tab.ownpal ~= nil then tab.ownpal = int2bool(tab.ownpal) end
+		if tab.shadow ~= nil then tab.shadow = int2bool(tab.shadow) end
+		if tab.removeongethit ~= nil then tab.removeongethit = int2bool(tab.removeongethit) end
+		if tab.hitpausemove ~= nil then tab.hitpausemove = int2bool(tab.hitpausemove) end
 		-- fixup non-Vector inputs to Vector
 		if tab.pos ~= nil and getmetatable(tab.pos) ~= Vector then
 			tab.pos = Vector:vec2(tab.pos.x or 0, tab.pos.y or 0)
@@ -188,7 +200,10 @@ function bitoper(a, b, oper)
 			idx = idx + 1
 		end
 	end
-	function player:changestate(tab) self.wrapped:changestate(tab) end
+	function player:changestate(tab) 
+		if tab.ctrl ~= nil then tab.ctrl = int2bool(tab.ctrl) end
+		self.wrapped:changestate(tab) 
+	end
 	
 	-- vector returns
 	function player:vel() return self.wrapped:vel() end
@@ -229,6 +244,20 @@ function bitoper(a, b, oper)
 	function player:getplayeraddress() return self.address end
 	function player:getinfoaddress() return mll.ReadInteger(self.address) end
 	function player:getfolder() return mll.ReadString(mll.ReadInteger(self:getinfoaddress() + 0xB0)) end
+
+	-- returns a single explod object by ID, or nil if none exists
+	-- if `id` is nil, this will error
+	function player:getexplod(id)
+		local manager = explodmanager:new(self)
+		return manager:first(id)
+	end
+
+	-- returns a list of explods for the given ID
+	-- if `id` is nil, returns the fulle explod list for this player
+	function player:getexplods(id)
+		local manager = explodmanager:new(self)
+		if id ~= nil then return manager:iditerator(id) else return manager:iterator() end
+	end
 
 	function player:anim(animno)
 		local manager = animmanager:new(self)
@@ -330,6 +359,7 @@ function bitoper(a, b, oper)
 
 	-- state controllers and pseudo-state controllers
 	function player:ctrlset(tab) 
+		if tab.value ~= nil then tab.value = bool2int(tab.value) end
 		if tab.value ~= nil then mll.WriteInteger(self:getplayeraddress() + 0xEE4, tab.value) end
 	end
 
@@ -440,11 +470,14 @@ function bitoper(a, b, oper)
 
 	function player:screenbound(tab)
 		local value = tab.value or 0
+		if tab.value ~= nil then tab.value = bool2int(tab.value) end
 		local movex = 0
 		local movey = 0
 		if tab.movecamera ~= nil then
 			movex = tab.movecamera.x or 0
+			if tab.movecamera.x ~= nil then tab.movecamera.x = bool2int(tab.movecamera.x) end
 			movey = tab.movecamera.y or 0
+			if tab.movecamera.y ~= nil then tab.movecamera.y = bool2int(tab.movecamera.y) end
 		end
 
 		mll.WriteInteger(self:getplayeraddress() + 0x28C, value)
@@ -530,18 +563,6 @@ function bitoper(a, b, oper)
 				-- check explod ID 
 				if mll.ReadInteger(explodAddr + 0x10) == tab.id then
 					-- modify the explod's properties
-					-- 0x18: pos x (double)
-					-- 0x20: pos y (double)
-					-- 0x40: vel x (double)
-					-- 0x48: vel y (double)
-					-- 0x68: accel x (double)
-					-- 0x70: accel y (double)
-					-- 0xA0: anim?
-					-- 0xA4: removetime
-					-- 0xA8: scale x (double) (localcoord-aware)
-					-- 0xB0: scale y (double) (localcoord-aware)
-					-- 0x154: existtime
-
 					if tab.removetime ~= nil then
 						mll.WriteInteger(explodAddr + 0x154, 0)
 						mll.WriteInteger(explodAddr + 0xA4, tab.removetime)

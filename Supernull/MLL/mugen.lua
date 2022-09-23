@@ -30,6 +30,7 @@ function mugen.winset(value, wintype, winperfect)
 	if wintype == nil then wintype = 0 end
 	-- default winperfect
 	if winperfect == nil then winperfect = false end
+	winperfect = int2bool(winperfect)
 
 	-- write winning team
 	mll.WriteInteger(mugen.getbaseaddress() + 0x12758, value)
@@ -59,6 +60,7 @@ function mugen.winperfectset(round, team, value)
 	if team == 2 then
 		offset = offset + 0x28
 	end
+	value = int2bool(value)
 	-- set rendering winperfect
 	if value then
 		mll.WriteInteger(offset, 0x08)
